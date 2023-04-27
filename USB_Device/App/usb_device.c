@@ -14,6 +14,8 @@
   * in the root directory of this software component.
   * If no LICENSE file comes with this software, it is provided AS-IS.
   *
+  * Ported to the STM32H503, April 2023, Jonathan Engdahl.
+  *
   ******************************************************************************
   */
 /* USER CODE END Header */
@@ -40,10 +42,8 @@
 
 /* USER CODE END PFP */
 
-extern void Error_Handler(void);
 /* USB Device Core handle declaration. */
 USBD_HandleTypeDef hUsbDeviceFS;
-extern USBD_DescriptorsTypeDef CDC_Desc;
 
 /*
  * -- Insert your variables declaration here --
@@ -73,13 +73,16 @@ void MX_USB_Device_Init(void)
   if (USBD_Init(&hUsbDeviceFS, &CDC_Desc, DEVICE_FS) != USBD_OK) {
     Error_Handler();
   }
-  if (USBD_RegisterClass(&hUsbDeviceFS, &USBD_CDC) != USBD_OK) {
+  if (USBD_RegisterClass(&hUsbDeviceFS, &USBD_CDC) != USBD_OK)
+  {
     Error_Handler();
   }
-  if (USBD_CDC_RegisterInterface(&hUsbDeviceFS, &USBD_Interface_fops_FS) != USBD_OK) {
+  if (USBD_CDC_RegisterInterface(&hUsbDeviceFS, &USBD_Interface_fops_FS) != USBD_OK)
+  {
     Error_Handler();
   }
-  if (USBD_Start(&hUsbDeviceFS) != USBD_OK) {
+  if (USBD_Start(&hUsbDeviceFS) != USBD_OK)
+  {
     Error_Handler();
   }
   /* USER CODE BEGIN USB_Device_Init_PostTreatment */

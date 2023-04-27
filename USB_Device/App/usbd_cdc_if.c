@@ -14,6 +14,8 @@
   * in the root directory of this software component.
   * If no LICENSE file comes with this software, it is provided AS-IS.
   *
+  * Ported to the STM32H503, April 2023, Jonathan Engdahl.
+  *
   ******************************************************************************
   */
 /* USER CODE END Header */
@@ -31,6 +33,8 @@
 
 /* USER CODE BEGIN PV */
 /* Private variables ---------------------------------------------------------*/
+
+static int vcp_init_complete = 0;
 
 /* USER CODE END PV */
 
@@ -110,6 +114,9 @@ extern USBD_HandleTypeDef hUsbDeviceFS;
 
 /* USER CODE BEGIN EXPORTED_VARIABLES */
 
+extern void vcp_tx_callback();
+extern void vcp_rx_callback(uint8_t *Buf, uint32_t Len);
+
 /* USER CODE END EXPORTED_VARIABLES */
 
 /**
@@ -155,6 +162,9 @@ static int8_t CDC_Init_FS(void)
   /* Set Application Buffers */
   USBD_CDC_SetTxBuffer(&hUsbDeviceFS, UserTxBufferFS, 0);
   USBD_CDC_SetRxBuffer(&hUsbDeviceFS, UserRxBufferFS);
+
+  vcp_init_complete = 1;
+
   return (USBD_OK);
   /* USER CODE END 3 */
 }
@@ -261,8 +271,8 @@ static int8_t CDC_Control_FS(uint8_t cmd, uint8_t* pbuf, uint16_t length)
 static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
 {
   /* USER CODE BEGIN 6 */
-  USBD_CDC_SetTxBuffer(&hUsbDeviceFS, Buf, *Len);
-  USBD_CDC_TransmitPacket(&hUsbDeviceFS);
+    vcp_rx_callback(Buf, *Len);
+
   USBD_CDC_SetRxBuffer(&hUsbDeviceFS, &Buf[0]);
   USBD_CDC_ReceivePacket(&hUsbDeviceFS);
   return (USBD_OK);
@@ -284,10 +294,11 @@ uint8_t CDC_Transmit_FS(uint8_t* Buf, uint16_t Len)
 {
   uint8_t result = USBD_OK;
   /* USER CODE BEGIN 7 */
-  USBD_CDC_HandleTypeDef *hcdc = (USBD_CDC_HandleTypeDef*)hUsbDeviceFS.pClassData;
-  if (hcdc->TxState != 0){
-    return USBD_BUSY;
-  }
+  if(!vcp_txready())
+      {
+      return USBD_BUSY;
+      }
+
   USBD_CDC_SetTxBuffer(&hUsbDeviceFS, Buf, Len);
   result = USBD_CDC_TransmitPacket(&hUsbDeviceFS);
   /* USER CODE END 7 */
@@ -313,11 +324,18 @@ static int8_t CDC_TransmitCplt_FS(uint8_t *Buf, uint32_t *Len, uint8_t epnum)
   UNUSED(Buf);
   UNUSED(Len);
   UNUSED(epnum);
+
+  vcp_tx_callback();
+
   /* USER CODE END 13 */
   return result;
 }
 
 /* USER CODE BEGIN PRIVATE_FUNCTIONS_IMPLEMENTATION */
+void vcp_init ()
+    {
+    while(!vcp_init_complete);		        // Wait until the CDC library calls CDC_Init_FS, by checking for a non-null buffer pointer
+    }
 
 /* USER CODE END PRIVATE_FUNCTIONS_IMPLEMENTATION */
 

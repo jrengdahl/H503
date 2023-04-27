@@ -14,6 +14,8 @@
   * in the root directory of this software component.
   * If no LICENSE file comes with this software, it is provided AS-IS.
   *
+  * Ported to the STM32H503, April 2023, Jonathan Engdahl.
+  *
   ******************************************************************************
   */
 /* USER CODE END Header */
@@ -48,8 +50,8 @@
   * @{
   */
 /* Define size for the receive and transmit buffer over CDC */
-#define APP_RX_DATA_SIZE  2048
-#define APP_TX_DATA_SIZE  2048
+#define APP_RX_DATA_SIZE  64
+#define APP_TX_DATA_SIZE  0
 /* USER CODE BEGIN EXPORTED_DEFINES */
 
 /* USER CODE END EXPORTED_DEFINES */
@@ -94,6 +96,8 @@ extern USBD_CDC_ItfTypeDef USBD_Interface_fops_FS;
 
 /* USER CODE BEGIN EXPORTED_VARIABLES */
 
+extern USBD_HandleTypeDef hUsbDeviceFS;
+
 /* USER CODE END EXPORTED_VARIABLES */
 
 /**
@@ -108,6 +112,14 @@ extern USBD_CDC_ItfTypeDef USBD_Interface_fops_FS;
 uint8_t CDC_Transmit_FS(uint8_t* Buf, uint16_t Len);
 
 /* USER CODE BEGIN EXPORTED_FUNCTIONS */
+
+void vcp_init ();
+
+inline int vcp_txready()
+    {
+    USBD_CDC_HandleTypeDef *hcdc = (USBD_CDC_HandleTypeDef*)hUsbDeviceFS.pClassData;
+    return hcdc->TxState == 0;
+    }
 
 /* USER CODE END EXPORTED_FUNCTIONS */
 

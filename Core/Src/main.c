@@ -25,6 +25,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "usb_device.h"
+#include "usbd_cdc_if.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -57,6 +58,16 @@ void SystemClock_Config(void);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 
+void trigon()
+    {
+    HAL_GPIO_WritePin(GPIONAME(LED), 1);
+    }
+
+void trigoff()
+    {
+    HAL_GPIO_WritePin(GPIONAME(LED), 0);
+    }
+
 /* USER CODE END 0 */
 
 /**
@@ -87,9 +98,14 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
-  MX_USB_Device_Init();
   MX_ICACHE_Init();
+  MX_USB_Device_Init();
   /* USER CODE BEGIN 2 */
+
+  vcp_init();
+
+  extern void background();
+  background();
 
   /* USER CODE END 2 */
 
