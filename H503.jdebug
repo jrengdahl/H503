@@ -4,7 +4,7 @@
 *                         www.segger.com                             *
 **********************************************************************
 
-File          : C:/STM32/H503-omp/H503-omp.jdebug
+File          : C:/STM32/H503/H503.jdebug
 Created       : 15 Apr 2023 00:52
 Ozone Version : V3.28e
 */
@@ -27,14 +27,14 @@ void OnProjectLoad (void) {
   Project.SetTargetIF ("SWD");
   Project.SetTIFSpeed ("4 MHz");
   Project.AddPathSubstitute("/cygdrive/c/","C:/");
-  Project.AddPathSubstitute ("C:/STM32/H503-omp", "$(ProjectDir)");
-  Project.AddPathSubstitute ("c:/stm32/h503-omp", "$(ProjectDir)");
+  Project.AddPathSubstitute ("C:/STM32/H503", "$(ProjectDir)");
+  Project.AddPathSubstitute ("c:/stm32/h503", "$(ProjectDir)");
   Project.AddSvdFile ("$(InstallDir)/Config/CPU/Cortex-M33F.svd");
   Project.AddSvdFile ("$(InstallDir)/Config/Peripherals/ARMv8M.svd");
   //
   // User settings
   //
-  File.Open ("C:/STM32/H503-omp/Debug/H503-omp.elf");
+  File.Open ("C:/STM32/H503/Debug/H503.elf");
 }
 
 /*********************************************************************

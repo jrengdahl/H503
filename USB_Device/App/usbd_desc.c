@@ -342,9 +342,15 @@ static void Get_SerialNum(void)
   uint32_t deviceserial1;
   uint32_t deviceserial2;
 
+#if 0 // this does not work on the STM32H503 -- perhaps the unique ID did not get programmed?
   deviceserial0 = *(uint32_t *) DEVICE_ID1;
   deviceserial1 = *(uint32_t *) DEVICE_ID2;
   deviceserial2 = *(uint32_t *) DEVICE_ID3;
+#else
+  deviceserial0 = 0x31415926;       // a bogus serial number
+  deviceserial1 = 0x53589793;
+  deviceserial2 = 0x23846264;
+#endif
 
   deviceserial0 += deviceserial2;
 

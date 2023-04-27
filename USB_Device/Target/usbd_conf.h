@@ -30,8 +30,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "stm32l5xx.h"
-#include "stm32l5xx_hal.h"
+#include "main.h"
+#include "stm32h5xx.h"
+#include "stm32h5xx_hal.h"
 
 /* USER CODE BEGIN INCLUDE */
 
@@ -73,9 +74,9 @@
 /*---------- -----------*/
 #define USBD_DEBUG_LEVEL     0U
 /*---------- -----------*/
-#define USBD_LPM_ENABLED     1U
+#define USBD_LPM_ENABLED     0U
 /*---------- -----------*/
-#define USBD_SELF_POWERED     1U
+#define USBD_SELF_POWERED     0U
 
 /****************************************/
 /* #define for FS and HS identification */
