@@ -47,6 +47,28 @@ void commas(uint32_t x)
 
 char buf[INBUFLEN];
 
+char TestStack[1024];
+Thread TestPort;
+unsigned TestCount = 0;
+uint32_t TestThread()
+    {
+    while(TestCount--)
+        {
+        TestPort.suspend();
+        TestPort.suspend();
+        TestPort.suspend();
+        TestPort.suspend();
+        TestPort.suspend();
+        TestPort.suspend();
+        TestPort.suspend();
+        TestPort.suspend();
+        TestPort.suspend();
+        TestPort.suspend();
+        }
+    return 0;
+    }
+
+
 uint32_t interp()
     {
     bear();
@@ -364,6 +386,37 @@ uint32_t interp()
                 summary((unsigned char *)&_memory2_start, (unsigned char *)&_memory2_end - (unsigned char *)&_memory2_start, inc, values);
                 }
             }
+
+
+//              //                              //
+        HELP(  "t <num>                        run the thread test")
+        else if(buf[0]=='t' && buf[1]==' ')
+            {
+            TestCount = getdec(&p);
+            Thread::spawn(TestThread, TestStack);
+            Elapsed();
+
+            while(!Thread::done(TestStack))
+                    {
+                    TestPort.resume();
+                    TestPort.resume();
+                    TestPort.resume();
+                    TestPort.resume();
+                    TestPort.resume();
+                    TestPort.resume();
+                    TestPort.resume();
+                    TestPort.resume();
+                    TestPort.resume();
+                    TestPort.resume();
+                    }
+
+            commas(Elapsed());
+            printf(" microseconds\n");
+             }
+
+
+
+
 
 
         else if(buf[0]=='?')

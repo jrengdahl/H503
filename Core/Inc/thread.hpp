@@ -122,8 +122,7 @@ class Thread
     // return: true if the thread is done, false if it is still running.
     // The result is only valid after the thread has been started (and you are waiting for it to complete).
     template<unsigned N>
-    __attribute__((__noinline__))
-    static bool done(char (&stack)[N])
+    static inline bool done(char (&stack)[N])
         {
         return stack[N-4] == 1;
         }
