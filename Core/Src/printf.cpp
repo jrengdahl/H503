@@ -2,7 +2,7 @@
 // Use the regular #include <stdio.h>.
 
 // Copyright (c) 2009, 2023 Jonathan Engdahl
-// BSD license -- see the accompanying README.txt
+// BSD license -- see the accompanying LICENSE file
 
 
 #include <stdio.h>

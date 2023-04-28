@@ -1,7 +1,7 @@
 // Print the Bear Metal logo
 
 // Copyright (c) 2023 Jonathan Engdahl
-// BSD license -- see the accompanying README.txt
+// BSD license -- see the accompanying LICENSE file
 
 // The bear image is in the public domain. It is from The Hiawatha Primer, by Florence Holbrook, 1898, page 21.
 // The book can be found here: https://www.google.com/books/edition/The_Hiawatha_Primer/2NEAAAAAYAAJ 

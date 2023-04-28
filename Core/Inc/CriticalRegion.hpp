@@ -1,7 +1,7 @@
 // A safe disable/enable interrupt wrapper
 
 // Copyright (c) 2023 Jonathan Engdahl
-// BSD license -- see the accompanying README.txt
+// BSD license -- see the accompanying LICENSE file
 
 #ifndef CRITICALREGION_HPP
 #define CRITICALREGION_HPP

@@ -6,7 +6,7 @@
 // getline and associated routines
 
 // Copyright (c) 2009, 2023 Jonathan Engdahl
-// BSD license -- see the accompanying README.txt
+// BSD license -- see the accompanying LICENSE file
 
 extern "C" int __io_getchar();
 

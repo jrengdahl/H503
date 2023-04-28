@@ -3,7 +3,7 @@
 // A simple but very fast threading system for bare metal ARM processors.
 //
 // Copyright (c) 2023 Jonathan Engdahl
-// BSD license -- see the accompanying README.txt
+// BSD license -- see the accompanying LICENSE file
 //
 //
 // A thread is represented by its non-volatile registers.

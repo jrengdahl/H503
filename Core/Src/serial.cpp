@@ -1,7 +1,7 @@
 // gaskets which adapt the serial I/O system (i.e. USB VCP) to printf and getline
 
 // Copyright (c) 2009, 2023 Jonathan Engdahl
-// BSD license -- see the accompanying README.txt
+// BSD license -- see the accompanying LICENSE file
 
  
 #include <stdint.h>

@@ -1,7 +1,7 @@
 // a simplistic RAM test
 
 // Copyright (c) 2023 Jonathan Engdahl
-// BSD license -- see the accompanying README.txt
+// BSD license -- see the accompanying LICENSE file
 
 // This uses the algorithm I developed in 1978 for a
 // 4 MHz Z-80 with 2 Kbytes of RAM. It may not be the best

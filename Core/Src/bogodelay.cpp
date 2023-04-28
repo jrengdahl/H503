@@ -5,7 +5,7 @@
 // This version is for the Cortex M33 which loops in three clocks
 
 // Copyright (c) 2009, 2023 Jonathan Engdahl
-// BSD license -- see the accompanying README.txt
+// BSD license -- see the accompanying LICENSE file
 
 __OPTIMIZE("O2")
 void bogodelay(uint32_t x)

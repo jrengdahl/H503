@@ -1,5 +1,5 @@
 // Copyright (c) 2009, 2023 Jonathan Engdahl
-// BSD license -- see the accompanying README.txt
+// BSD license -- see the accompanying LICENSE file
 
 #ifndef LOCAL_H
 #define LOCAL_H

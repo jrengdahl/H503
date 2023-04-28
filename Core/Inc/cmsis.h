@@ -1,5 +1,5 @@
 // Copyright (c) 2023 Jonathan Engdahl
-// BSD license -- see the accompanying README.txt
+// BSD license -- see the accompanying LICENSE file
 
 #ifndef CMSIS_H
 #define CMSIS_H

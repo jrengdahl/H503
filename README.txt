@@ -17,9 +17,9 @@ The STM32H503 is a low-end microcontroller by ST Microelectronics:
 
 THE FIRMWARE
 
-The firmware is managed by an STM32CubeIDE project. The skeleton of the
-project was auto-generated from the H503.ioc file. My firmware is a
-simple command line interpeter with the following commands:
+The firmware build is managed by an STM32CubeIDE project. The skeleton
+of the project was auto-generated from the H503.ioc file. My firmware is
+a simple command line interpeter with the following commands:
 
 -- dump memory
 -- modify memory
@@ -32,6 +32,8 @@ simple command line interpeter with the following commands:
 -- execute a single STR to a given memory location
 -- print a summary of the flash and RAM
 -- print the help
+
+The command line processor is simple and easily expanded with new commands.
 
 For similar L412 and H743 projects, rather than using an FTDI
 USB-to-serial cable, or an on-board USB-to-serial chip, I decided to
@@ -87,16 +89,16 @@ user code does not clobber r9. According to the AAPCS specification, r9
 should be untouched by libraries. I have never seen a precompiled ibrary
 that observes this rule. Fortunately, the ST-supplied code is always
 compiled along with your firmware. Unfortunately, the newlib that comes
-with the standard ARM bare metal toolchain does not follow the rule an
+with the standard ARM bare metal toolchain does not follow the rule and
 clobbers r9.
 
 -- GCC includes OpenMP, however it is only enabled for platforms that
 have a large OS, such as Linux or Windows. The bare metal version of the
-toolchain do not have OpenMP enabled.
+toolchain does not have OpenMP enabled. My bare metal toolchain has
+OPenMP enabled.
 
-The Cortex-M33 GCC toolchain to be used with this project is found at:
+The Cortex-M33 GCC 12.2 toolchain to be used with this project is found at:
 https://github.com/jrengdahl/cross/releases
-
 
 
 THE BOARD
@@ -116,7 +118,7 @@ brought out to solderable test points.
 
 Interesting things about the board are:
 -- Arduino Nano form factor
--- can be powewred from the USB port
+-- can be powered from the USB port
 -- uses the on-chip USB for a virtual serial console
 -- trace port
 
@@ -124,9 +126,11 @@ Otherwise the board is very minimal: power reulator, crystal oscillator,
 connectors, a reset button, the BOOT0 button is also an GPIO input, and
 one LED.
 
-The microcontroller pinout I used is recorded in a CubeMX project,
-H503.kicad/H503.ioc. This is a sample CubeMX project which shows
-a possible maximum usage of the pins.
+The microcontroller pinout is recorded in a CubeMX project,
+H503.kicad/H503.ioc. This is a sample CubeMX project I used as reference
+for the board design, which shows a possible maximum usage of the pins.
+The separate H503.ioc used by the firmware project only enables the pins
+that are currently supported by the firmware.
 
 One of my retirement presents to myself was a Segger J-Trace probe, so I
 put a 20-pin trace port on the board rather than the usual four-pin
@@ -137,9 +141,9 @@ One reason I prefer the M7 processors is that they include an on-chip
 trace buffer, and a trace probe is not required. I use the free Segger
 Ozone debugger, which can display trace for either on-chip or off-chip
 trace. Unfortunately, since COVID, M7 chips are nearly impossible for a
-hobbyist to obtain. That is why I have recently been focusing on the
-L412, and more recenty the H503. (Try lcsc.com if you need M7 chips, I
-found some affordable H7B0).
+hobbyist to obtain. That is why I have been focusing on the L412, and
+more recently the H503. (Try lcsc.com if you need M7 chips, I found some
+affordable H7B0).
 
 Trace is not working yet.
 

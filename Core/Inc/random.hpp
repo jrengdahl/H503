@@ -5,7 +5,7 @@
 // good enough for software testing.
 
 // Copyright (c) 2009, 2023 Jonathan Engdahl
-// BSD license -- see the accompanying README.txt
+// BSD license -- see the accompanying LICENSE file
 
 #ifndef RANDOM_HPP
 #define RANDOM_HPP
