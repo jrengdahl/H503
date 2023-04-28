@@ -39,7 +39,7 @@ are intended for use in very small firmwares on microprocessors with
 limited firmware space, such as 64 Kbytes. The routines have the
 following properties:
 
--- They are smaller than the versions included in glibs or newlib.
+-- They are smaller than the versions included in glibc or newlib.
 
 -- They do not pull through other library routines.
 
@@ -56,7 +56,7 @@ Use the header files that come with your compiler and library.
 If you notice that the 64K flash of your microcontroller is suddenly
 half filled with 32K of library routines, find which routine you called
 is pulling in the stuff you don't need. For example, calling printf
-pulls in a TON of other routines. Once you hae identified the culprit,
+pulls in a TON of other routines. Once you have identified the culprit,
 write a simple replacement that implements only the functionality you
 need, and add it to this library.
 
