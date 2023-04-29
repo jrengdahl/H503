@@ -5,6 +5,14 @@
 // BSD license -- see the accompanying LICENSE file
 
 
+// Loading or storing the sp using ldr or str generate the warning:
+// "This instruction may be unpredictable if executed on M-profile cores with interrupts enabled."
+// Since the instructions below which trigger this warning are executed with interrupts off,
+// it is safe to ignore the warning. You can add the option:
+// "-Wa,--no-warn", TO THIS FILE ONLY
+// to suppress the assembler warning. I recommend that you remove that option if you make any
+// changes to this module, until you have tested the changes.
+
 #include <stdint.h>
 #include "thread.hpp"
 
@@ -22,13 +30,13 @@ bool Thread::resume()
 "   mrs     ip, primask                 \n"         // save interrupt state
 "   cpsid   i                           \n"         // disable interrupts
 "   ldr     r2, [r0]                    \n"         // look at the sp in the new thread
-"   cbz     r2, 0f                      \n"         // go return false if sp is zero
 "   mov     r3, #0                      \n"         // zero the sp in the Thread buffer
+"   cbz     r2, 0f                      \n"         // go return false if sp is zero
 "   str     r3, [r0], #4                \n"         // and increment r0
-"   mov     r3, sp                      \n"         // sp cannot be pushed, so move it to ip first
-"   stmdb   r9!, {r3-r8, r10-ip, lr}    \n"         // push all the non-volatile registers of the current thread onto the thread stack
-"   ldmia   r0,  {r4-r8, r10-ip, lr}    \n"         // load the rest of the non-volatile registers of the new thread into the registers
-"   mov     sp, r2                      \n"         // move ip back to sp
+"   stmdb   r9!, {r4-r8, r10-ip, lr}    \n"         // push all the non-volatile registers of the current thread onto the thread stack
+"   str     sp, [r9, #-4]!              \n"         // save the SP into the Thread
+"   mov     sp, r2                      \n"         // load sp of new thread
+"   ldmia   r0,  {r4-r8, r10-ip, lr}    \n"         // load the rest of the non-volatile registers of the new thread
 "   msr     primask, ip                 \n"         // restore the new thread's interrupt state
 "   bx      lr                          \n"         // return to the new thread
 
@@ -46,14 +54,15 @@ bool Thread::resume()
 void Thread::suspend()
     {
     __asm__ __volatile__(
-"   mrs ip, primask                     \n"         // save interrupt state
-"   cpsid i                             \n"         // disable interrupts
-"   mov r3, sp                          \n"         // save sp in ip so it can be saved using STM
-"   stmia r0,   {r3-r8, r10-ip, lr}     \n"         // save the non-volatile registers of the current thread into the Thread instance
-"   ldmia r9!,  {r3-r8, r10-ip, lr}     \n"         // pop the non-volatile registers of the most recently active thread on the pending stack
-"   mov sp, r3                          \n"         // restore sp
-"   msr primask, ip                     \n"         // restore the new thread's interrupt state
-"   mov r0, #1                          \n"         // return a "true" from the resume call
+"   mrs     ip, primask                 \n"         // save interrupt state
+"   cpsid   i                           \n"         // disable interrupts
+"   str     sp, [r0], #4                \n"         // save the old sp into the suspended Thread
+"   stm     r0, {r4-r8, r10-ip, lr}     \n"         // save the non-volatile registers of the current thread into the Thread instance
+"   ldr     sp, [r9], #4                \n"         // pop the new sp from the pending Thread
+"   ldmia   r9!, {r4-r8, r10-ip, lr}    \n"         // pop the non-volatile registers of the most recently active thread on the pending stack
+"   msr     primask, ip                 \n"         // restore the new thread's interrupt state
+"   mov     r0, #1                      \n"         // return a "true" from the resume call
+"   bx      lr                          \n"         //
     );                                              // return to the un-pending thread right after it's call to resume
     }
 

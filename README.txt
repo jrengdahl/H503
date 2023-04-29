@@ -88,9 +88,9 @@ entire firmware must be compiled with the GCC flag "-ffixed-r9", so that
 user code does not clobber r9. According to the AAPCS specification, r9
 should be untouched by libraries. I have never seen a precompiled ibrary
 that observes this rule. Fortunately, the ST-supplied code is always
-compiled along with your firmware. Unfortunately, the newlib that comes
-with the standard ARM bare metal toolchain does not follow the rule and
-clobbers r9.
+compiled along with your firmware. Unfortunately, the precompiled newlib
+that comes with the standard ARM bare metal GCC toolchain does not
+follow the rule and clobbers r9.
 
 -- GCC includes OpenMP, however it is only enabled for platforms that
 have a large OS, such as Linux or Windows. The bare metal version of the
@@ -107,7 +107,7 @@ The KiCAD project for the board is included, or you can order three
 boards from OSHPark for $16.
 https://oshpark.com/shared_projects/t9n5Q26a
 
-The board uses the Arduino Nano form factor, but is only partly
+The board uses the Arduino Nano form factor, but is only partially
 pin-compatible. It will fit into a Nano socket, such as this:
 https://www.amazon.com/gp/product/B095XVVGQ8. Since the H503 is only
 available in a 64-pin LQFP at the moment, in order to fit it on the
@@ -133,9 +133,11 @@ The separate H503.ioc used by the firmware project only enables the pins
 that are currently supported by the firmware.
 
 One of my retirement presents to myself was a Segger J-Trace probe, so I
-put a 20-pin trace port on the board rather than the usual four-pin
+put a 20-pin trace port on this board rather than the usual four-pin
 Serial Wire Debug port. If you don't have a trace probe you can populate
-a 10-pin connector instead, and use a J-link or ST-Link probe. 
+a 10-pin connector instead, and use a J-link or ST-Link probe. (You
+can't fit a 10-pin connector onto a 20 pin header because the end of the
+connector won't fit between the 5th and 6th pairs of pins).
 
 One reason I prefer the M7 processors is that they include an on-chip
 trace buffer, and a trace probe is not required. I use the free Segger
@@ -149,8 +151,8 @@ Trace is not working yet.
 
 Building the board is not hard. I do my soldering under a 1959
 StereoZoom microscope using a very fine-tip pencil, and SMT solder paste
-applied with a toothpick, or wire solder for through-hole parts. The
-only thing to watch out for is the USB connector. If you use too little
+applied with a toothpick, or wire solder for through-hole parts. One
+thing to watch out for is the USB connector. If you use too little
 solder you risk ripping the connector off the board if you are not real
 careful with the USB cable. If you use too much solder it can puddle
 under the connector and short out the signal pins.
