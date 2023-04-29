@@ -3,13 +3,29 @@
 // Copyright (c) 2023 Jonathan Engdahl
 // BSD license -- see the accompanying LICENSE file
 
-
 #include <stdio.h>
 #include <stdint.h>
 
 #include "boundaries.h"
 
 // print a summary of memory
+//
+// Print a two character summary of each block of an area of memory.
+// The default block is 256 bytes.
+// The two character pair might be:
+// -- TT for the .text area
+// -- DD for .data
+// -- BB for .bss
+// -- HH for the heap
+// -- SS for the area declared as stack on the linker file, though threads may have stacks elsewhere 
+// -- XX is the memory block is not one of the above and all the bytes in the block do not have the same value
+// -- hh the summary may be a two-digit hex value if every byte of the block has the same value.
+
+// args:
+//  -- a pointer to the start of the memory area to summarize
+//  -- the size of the memory area to summarize
+//  -- the sie of the memory block represented by a each two-character pair
+//  -- a bool flag that selects whether a block is represented by its type (false) or its hex value (true), if each byte has the same value
 
 void summary(   unsigned char *mem,                     // start of memory region to summarize
                 unsigned size,                          // size of memory region to summarize
@@ -26,31 +42,31 @@ void summary(   unsigned char *mem,                     // start of memory regio
             }
 
         unsigned char b = mem[i];                       // remember first byte in block
-        char c[3];                                      // print buffer
+        char buf[3];                                    // print buffer
 
-        snprintf(c, 3, "%02x", b);                      // save hex representation of the first byte
+        snprintf(buf, 3, "%02x", b);                    // save hex representation of the first byte
 
         for(unsigned j=0; j<inc; j++)                   // for each byte in the block
             {
-            if(mem[i+j] != b || values==0)              // if the byte is different from the first byte
+            if(mem[i+j] != b || values==0)              // if the byte is different from the first byte, or we are not printing values
                 {
                 char sym;
                 uint32_t *addr = (uint32_t *)&mem[i+j];
 
-                if(     addr >= &_text_start      && addr < &_text_end)      sym = 'T';
+                if(     addr >= &_text_start      && addr < &_text_end)      sym = 'T';     // select a type depending on what range the mmory is in
                 else if(addr >= &_sdata           && addr < &_edata)         sym = 'D';
                 else if(addr >= &_sbss            && addr < &_ebss)          sym = 'B';
                 else if(addr >= &_heap_start      && addr < &_heap_end)      sym = 'H';
                 else if(addr >= &_stack_start     && addr < &_stack_end)     sym = 'S';
                 else                                                         sym = '#';
 
-                c[0] = sym;                             // change representation to hash
-                c[1] = sym;
+                buf[0] = sym;                           // fill a two char buffer with the selected memory type
+                buf[1] = sym;
                 }
             }
 
-        printf("%s ", c);                               // print result of this block
-        line++;                                         // count up to 16 clicks per line
+        printf("%s ", buf);                             // print summary of this block
+        line++;                                         // count up to 16 blocks per line
         if(line>=16)                                    // at end of line
             {
             printf("\n");                               // print newline
@@ -58,7 +74,7 @@ void summary(   unsigned char *mem,                     // start of memory regio
             }
         }
 
-    if(line != 0)
+    if(line != 0)                                       // print a newline if not already at the start of a new line
         {
         printf("\n");
         }
