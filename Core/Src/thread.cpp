@@ -61,8 +61,7 @@ void Thread::suspend()
 "   ldr     sp, [r9], #4                \n"         // pop the new sp from the pending Thread
 "   ldmia   r9!, {r4-r8, r10-ip, lr}    \n"         // pop the non-volatile registers of the most recently active thread on the pending stack
 "   msr     primask, ip                 \n"         // restore the new thread's interrupt state
-"   mov     r0, #1                      \n"         // return a "true" from the resume call
-"   bx      lr                          \n"         //
+"   bx      lr                          \n"         // r0 will be non-zero on return to indicate that the corresponding resume succeeded
     );                                              // return to the un-pending thread right after it's call to resume
     }
 
@@ -139,3 +138,11 @@ void Thread::init()
     }
 
 
+// results of optimization steps
+// >t 5000000
+// 13,708,501 microseconds
+// 13,308,256 microseconds
+// 12,908,006 microseconds
+// 12,707,884 microseconds
+// 12,507,722 microseconds
+// nearly 10% improvemebt
