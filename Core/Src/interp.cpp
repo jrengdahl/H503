@@ -392,7 +392,11 @@ uint32_t interp()
         HELP(  "t <num>                        run the thread test")
         else if(buf[0]=='t' && buf[1]==' ')
             {
-            TestCount = getdec(&p);
+            unsigned ticks;
+            unsigned count;
+
+            count = getdec(&p);
+            TestCount = count;
             Thread::spawn(TestThread, TestStack);
             Elapsed();
 
@@ -410,8 +414,10 @@ uint32_t interp()
                     TestPort.resume();
                     }
 
-            commas(Elapsed());
+            ticks = Elapsed();
+            commas(ticks);
             printf(" microseconds\n");
+            printf("%u ns\n", ticks/(count/50));
              }
 
 
