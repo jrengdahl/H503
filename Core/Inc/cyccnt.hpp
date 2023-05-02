@@ -19,7 +19,8 @@ inline void InitCyccnt()
     xDWT_CONTROL |= 1;               // enable DWT cycle counter
     }
 
-#define CPU_FREQ_MHZ 250
+//#define CPU_FREQ_MHZ 250
+#define CPU_FREQ_MHZ 50
 #define CPU_FREQ_KHZ (CPU_FREQ_MHZ * 1000)
 
 #define USEC ((xCYCCNT + CPU_FREQ_MHZ/2)/CPU_FREQ_MHZ)
