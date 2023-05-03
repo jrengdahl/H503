@@ -20,7 +20,7 @@ inline void InitCyccnt()
     }
 
 //#define CPU_FREQ_MHZ 250
-#define CPU_FREQ_MHZ 150
+#define CPU_FREQ_MHZ 100
 #define CPU_FREQ_KHZ (CPU_FREQ_MHZ * 1000)
 
 #define USEC ((xCYCCNT + CPU_FREQ_MHZ/2)/CPU_FREQ_MHZ)
