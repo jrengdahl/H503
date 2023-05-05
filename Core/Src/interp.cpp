@@ -23,7 +23,8 @@ extern void bear();
 extern "C" char *strchrnul(const char *s, int c);   // POSIX function but not included in newlib, see https://linux.die.net/man/3/strchr
 extern void summary(unsigned char *, unsigned, unsigned, int);
 void RamTest(uint8_t *addr, unsigned size, unsigned repeat, unsigned limit);
-extern "C" void SystemClock_Config(void);
+extern "C" void SystemClock_PLL_Config(unsigned);
+extern "C" void SystemClock_HSI_Config(void);
 
 // print a large number with commas
 void commas(uint32_t x)
@@ -284,8 +285,8 @@ uint32_t interp()
                 clk = getdec(&p);                                           // get the count
                 }
 
-            CPU_CLOCK_FREQUENCY = clk;
-            SystemClock_Config();
+            SystemClock_HSI_Config();       // have to deselect the PLL before reprogramming it
+            SystemClock_PLL_Config(clk);    // set the PLL to the new frequency
             }
 
 
