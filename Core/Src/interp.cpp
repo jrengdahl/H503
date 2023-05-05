@@ -23,6 +23,7 @@ extern void bear();
 extern "C" char *strchrnul(const char *s, int c);   // POSIX function but not included in newlib, see https://linux.die.net/man/3/strchr
 extern void summary(unsigned char *, unsigned, unsigned, int);
 void RamTest(uint8_t *addr, unsigned size, unsigned repeat, unsigned limit);
+extern "C" void SystemClock_Config(void);
 
 // print a large number with commas
 void commas(uint32_t x)
@@ -273,6 +274,22 @@ uint32_t interp()
 
 
 //              //                              //
+        HELP(  "clk <freq in MHz>               set CPU clock")
+        else if(buf[0]=='c' && buf[1]=='l' && buf[2]=='k')
+            {
+            unsigned clk = 100;
+
+            if(isdigit(*p))                                                 // while there is any data left on the command line
+                {
+                clk = getdec(&p);                                           // get the count
+                }
+
+            CPU_CLOCK_FREQUENCY = clk;
+            SystemClock_Config();
+            }
+
+
+//              //                              //
         HELP(  "c <count>                       calibrate")
         else if(buf[0]=='c' && buf[1]==' ')
             {
@@ -389,7 +406,7 @@ uint32_t interp()
 
 
 //              //                              //
-        HELP(  "t <num>                        run the thread test")
+        HELP(  "t <num>                         run the thread test")
         else if(buf[0]=='t' && buf[1]==' ')
             {
             unsigned ticks;
