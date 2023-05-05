@@ -35,6 +35,19 @@ extern "C" {
 #include <stddef.h>
 #include <math.h>
 
+/* Private macro -------------------------------------------------------------*/
+/* USER CODE BEGIN PM */
+
+// hack to supress warning
+// because this file redefines __NOINLINE without a guard
+#ifdef __NOINLINE
+#undef __NOINLINE
+#endif
+
+/* USER CODE END PM */
+
+
+
 /* Exported types ----------------------------------------------------------------------------------------------------*/
 
 /**
@@ -212,9 +225,7 @@ typedef enum
 /* ARM & GNUCompiler
 
 */
-#ifndef __NOINLINE
 #define __NOINLINE __attribute__ ( (noinline) )
-#endif
 
 #elif defined ( __ICCARM__ )
 /* ICCARM Compiler
