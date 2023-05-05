@@ -22,6 +22,7 @@ void OnProjectLoad (void) {
   //
   // Dialog-generated settings
   //
+  Project.SetTraceSource ("Trace Pins");
   Project.SetDevice ("STM32H503RB");
   Project.SetHostIF ("USB", "");
   Project.SetTargetIF ("SWD");
@@ -34,6 +35,8 @@ void OnProjectLoad (void) {
   //
   // User settings
   //
+  Edit.SysVar (VAR_TRACE_TIMESTAMPS_ENABLED, 0);
+  Edit.SysVar (VAR_TRACE_CORE_CLOCK, 50000000);
   File.Open ("C:/STM32/H503/Debug/H503.elf");
 }
 
@@ -151,8 +154,9 @@ void AfterTargetReset (void) {
 *
 **********************************************************************
 */
-//void BeforeTargetConnect (void) {
-//}
+void BeforeTargetConnect (void) {
+ Project.SetJLinkScript("./ST_STM32H503_TracePins.JLinkScript");
+}
 
 /*********************************************************************
 *

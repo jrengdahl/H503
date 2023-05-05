@@ -67,18 +67,8 @@ extern void foo();
 #define SWDIO_GPIO_Port GPIOA
 #define SWCLK_Pin GPIO_PIN_14
 #define SWCLK_GPIO_Port GPIOA
-#define TRACED3_Pin GPIO_PIN_12
-#define TRACED3_GPIO_Port GPIOC
-#define TRACED2_Pin GPIO_PIN_2
-#define TRACED2_GPIO_Port GPIOD
 #define LED_Pin GPIO_PIN_3
 #define LED_GPIO_Port GPIOB
-#define TRACECK_Pin GPIO_PIN_5
-#define TRACECK_GPIO_Port GPIOB
-#define TRACED0_Pin GPIO_PIN_6
-#define TRACED0_GPIO_Port GPIOB
-#define TRACED1_Pin GPIO_PIN_7
-#define TRACED1_GPIO_Port GPIOB
 #define SW1_Pin GPIO_PIN_8
 #define SW1_GPIO_Port GPIOB
 

@@ -1,4 +1,4 @@
-STM32H503RB test board
+STM32H503RB test board and firmware
 
 This project includes a small OSHPark board for the new H503
 microcontroller from ST MIcro, and firmware to run on the board.
@@ -57,9 +57,9 @@ many years it has gone by the name of "wait-wake", "plastic fork", and
 "not-an-OS", but currently goes by the name of "Bear Metal Threads".
 Its characteristics include:
 
--- very small: the core consists of 23 assembly instructions, plus a
-   little more for the creation of new threads. 
--- very fast: a thread switch takes about 130 nanoseconds on a 250 MHz M33.
+-- very small: the code that gets used at runtime consists of 23 ASM
+   instructions. There is a little more for creating threads at powerup. 
+-- very fast: a thread switch takes 125 nanoseconds on a 250 MHz M33.
 -- non-preemptive: there is no scheduler.
 -- threads can run at interrupt level, which can provide prioritization.
 
@@ -81,7 +81,7 @@ This is experimental and ongoing.
 
 THE GCC TOOLCHAIN
 
-There are two reason this firmware requires a special toolchain:
+There are two reasons this firmware requires a special toolchain:
 
 -- The threading system reserves r9 for the preempted thread stack. The
 entire firmware must be compiled with the GCC flag "-ffixed-r9", so that
@@ -93,8 +93,8 @@ that comes with the standard ARM bare metal GCC toolchain does not
 follow the rule and clobbers r9.
 
 -- GCC includes OpenMP, however it is only enabled for platforms that
-have a large OS, such as Linux or Windows. The bare metal version of the
-toolchain does not have OpenMP enabled. My bare metal toolchain has
+have a large OS, such as Linux or Windows. The bare metal versions of
+the toolchain do not have OpenMP enabled. My bare metal toolchain has
 OPenMP enabled.
 
 The Cortex-M33 GCC 12.2 toolchain to be used with this project is found at:
@@ -121,10 +121,12 @@ Interesting things about the board are:
 -- can be powered from the USB port
 -- uses the on-chip USB for a virtual serial console
 -- trace port
+-- SPI flash
 
 Otherwise the board is very minimal: power reulator, crystal oscillator,
 connectors, a reset button, the BOOT0 button is also an GPIO input, and
-one LED.
+one LED. I put a Winbond SPI flash on it because I want to learn how to
+use them.
 
 The microcontroller pinout is recorded in a CubeMX project,
 H503.kicad/H503.ioc. This is a sample CubeMX project I used as reference
@@ -132,8 +134,8 @@ for the board design, which shows a possible maximum usage of the pins.
 The separate H503.ioc used by the firmware project only enables the pins
 that are currently supported by the firmware.
 
-One of my retirement presents to myself was a Segger J-Trace probe, so I
-put a 20-pin trace port on this board rather than the usual four-pin
+One of my retirement presents to myself was a Segger J-Trace probe, so
+I put a 20-pin trace port on this board rather than the usual four-pin
 Serial Wire Debug port. If you don't have a trace probe you can populate
 a 10-pin connector instead, and use a J-link or ST-Link probe. (You
 can't fit a 10-pin connector onto a 20 pin header because the end of the
