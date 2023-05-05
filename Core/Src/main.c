@@ -47,6 +47,8 @@
 
 /* USER CODE BEGIN PV */
 
+unsigned CPU_CLOCK_FREQUENCY = 100;
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -126,6 +128,21 @@ int main(void)
   */
 void SystemClock_Config(void)
 {
+  unsigned PLLN;
+  unsigned PLLP;
+
+  if(CPU_CLOCK_FREQUENCY > 128)
+    {
+    PLLN = CPU_CLOCK_FREQUENCY;
+    PLLP = 2;
+    }
+  else
+    {
+    PLLN = CPU_CLOCK_FREQUENCY*2;
+    PLLP = 4;
+    }
+
+
   RCC_OscInitTypeDef RCC_OscInitStruct = {0};
   RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
 
@@ -143,8 +160,8 @@ void SystemClock_Config(void)
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
   RCC_OscInitStruct.PLL.PLLSource = RCC_PLL1_SOURCE_HSE;
   RCC_OscInitStruct.PLL.PLLM = 4;
-  RCC_OscInitStruct.PLL.PLLN = 100;
-  RCC_OscInitStruct.PLL.PLLP = 2;
+  RCC_OscInitStruct.PLL.PLLN = PLLN;
+  RCC_OscInitStruct.PLL.PLLP = PLLP;
   RCC_OscInitStruct.PLL.PLLQ = 3;
   RCC_OscInitStruct.PLL.PLLR = 2;
   RCC_OscInitStruct.PLL.PLLRGE = RCC_PLL1_VCIRANGE_1;
@@ -166,7 +183,7 @@ void SystemClock_Config(void)
   RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
   RCC_ClkInitStruct.APB3CLKDivider = RCC_HCLK_DIV1;
 
-  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_2) != HAL_OK)
+  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, CPU_CLOCK_FREQUENCY/50) != HAL_OK)
   {
     Error_Handler();
   }
