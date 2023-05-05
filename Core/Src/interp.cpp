@@ -278,15 +278,18 @@ uint32_t interp()
         HELP(  "clk <freq in MHz>               set CPU clock")
         else if(buf[0]=='c' && buf[1]=='l' && buf[2]=='k')
             {
-            unsigned clk = 100;
-
-            if(isdigit(*p))                                                 // while there is any data left on the command line
+            if(isdigit(*p))                     // if an arg is given
                 {
-                clk = getdec(&p);                                           // get the count
+                unsigned clk = getdec(&p);      // set the clock freuqnecy to the new value
+                SystemClock_HSI_Config();       // have to deselect the PLL before reprogramming it
+                SystemClock_PLL_Config(clk);    // set the PLL to the new frequency
                 }
 
-            SystemClock_HSI_Config();       // have to deselect the PLL before reprogramming it
-            SystemClock_PLL_Config(clk);    // set the PLL to the new frequency
+            printf("CPU clock is %u MHz\n", CPU_CLOCK_FREQUENCY);
+            if(CPU_CLOCK_FREQUENCY > 100)
+                {
+                printf("trace may not be stable at frequencies over 100 MHz\n");
+                }
             }
 
 
