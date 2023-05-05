@@ -155,7 +155,7 @@ void AfterTargetReset (void) {
 **********************************************************************
 */
 void BeforeTargetConnect (void) {
- Project.SetJLinkScript("../ST_STM32H503_TracePins.JLinkScript");
+ Project.SetJLinkScript("./ST_STM32H503_TracePins.JLinkScript");
 }
 
 /*********************************************************************
