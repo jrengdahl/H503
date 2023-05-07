@@ -14,6 +14,7 @@
 // changes to this module, until you have tested the changes.
 
 #include <stdint.h>
+#include "cmsis.h"
 #include "thread.hpp"
 
 // Define the maximum depth of the thread stack -- how deep can "resume" calls be nested.
@@ -24,6 +25,8 @@ static Thread thread_stack[THREAD_DEPTH];
 
 // Push the current thread onto the pending stack, and
 // resume a thread saved in a Thread object.
+__NOINLINE
+__NAKED
 bool Thread::resume()
     {
     __asm__ __volatile__(
@@ -35,11 +38,11 @@ bool Thread::resume()
 "   str     r3, [r0], #4                \n"         // and increment r0
 "   stmdb   r9!, {r4-r8, r10-ip, lr}    \n"         // push all the non-volatile registers of the current thread onto the thread stack
 "   str     sp, [r9, #-4]!              \n"         // save the SP into the Thread
-"   mov     sp, r2                      \n"         // load sp of new thread
-"   ldmia   r0,  {r4-r8, r10-ip, lr}    \n"         // load the rest of the non-volatile registers of the new thread
-"   msr     primask, ip                 \n"         // restore the new thread's interrupt state
-"   bx      lr                          \n"         // return to the new thread
+    );
 
+    resume_switch();
+
+    __asm__ __volatile__(
 "0: mov     r0, #0                      \n"         // return false
 "   msr     primask, ip                 \n"         // restore previous interrupt state
 "   bx      lr                          \n"         //
@@ -48,9 +51,23 @@ bool Thread::resume()
     return false;                                   // dummy return to keep the compiler happy
     }
 
+__NOINLINE
+__NAKED
+void Thread::resume_switch()
+    {
+    __asm__ __volatile__(
+"   mov     sp, r2                      \n"         // load sp of new thread
+"   ldmia   r0,  {r4-r8, r10-ip, lr}    \n"         // load the rest of the non-volatile registers of the new thread
+"   msr     primask, ip                 \n"         // restore the new thread's interrupt state
+"   bx      lr                          \n"         // return to the new thread
+    );
+    }
+
 // Suspend the current thread into a Thread object,
 // pop the next thread from the pending stack into the
 // register set, and resume running it.
+__NOINLINE
+__NAKED
 void Thread::suspend()
     {
     __asm__ __volatile__(
@@ -58,6 +75,16 @@ void Thread::suspend()
 "   cpsid   i                           \n"         // disable interrupts
 "   str     sp, [r0], #4                \n"         // save the old sp into the suspended Thread
 "   stm     r0, {r4-r8, r10-ip, lr}     \n"         // save the non-volatile registers of the current thread into the Thread instance
+    );
+
+    suspend_switch();
+    }
+
+__NOINLINE
+__NAKED
+void Thread::suspend_switch()
+    {
+    __asm__ __volatile__(
 "   ldr     sp, [r9], #4                \n"         // pop the new sp from the pending Thread
 "   ldmia   r9!, {r4-r8, r10-ip, lr}    \n"         // pop the non-volatile registers of the most recently active thread on the pending stack
 "   msr     primask, ip                 \n"         // restore the new thread's interrupt state
@@ -85,37 +112,53 @@ void Thread::suspend()
 // to this code, which will run the next thread from the pending stack. This
 // is not necessarily the thread which created the terminated thread.
 
+__NOINLINE
+__NAKED
 void Thread::start(THREADFN *fn, char *newsp)
     {
     __asm__ __volatile__(
-"   mrs ip, primask                     \n"         // save interrupt state
-"   cpsid i                             \n"         // disable interrupts
-"   mov r3, sp                          \n"         // save the sp of the calling thread in a register that can be pushed
-"   stmdb r9!, {r3-r8, r10-ip, lr}      \n"         // push the calling thread onto the pending thread stack
+"   mrs     ip, primask                 \n"         // save interrupt state
+"   cpsid   i                           \n"         // disable interrupts
+"   mov     r3, sp                      \n"         // save the sp of the calling thread in a register that can be pushed
+"   stmdb   r9!, {r3-r8, r10-ip, lr}    \n"         // push the calling thread onto the pending thread stack
+    );
 
-"   mov sp, %[newsp]                    \n"         // setup the new thread's stack
-"   mov r1, #0                          \n"         //
-"   str r1, [sp, #0]                    \n"         // clear the return value
-"   str r1, [sp, #4]                    \n"         // and the "done" flag
+    start_switch1();
+    }
 
-"   msr primask, ip                     \n"         // restore the new thread's interrupt state
-"   blx %[fn]                           \n"         // start executing the code of the new thread
+__NOINLINE
+__NAKED
+void Thread::start_switch1()
+    {
+    __asm__ __volatile__(
+"   mov     sp, r1                      \n"         // setup the new thread's stack
+"   mov     r1, #0                      \n"         //
+"   str     r1, [sp, #0]                \n"         // clear the return value
+"   str     r1, [sp, #4]                \n"         // and the "done" flag
+"   msr     primask, ip                 \n"         // restore the new thread's interrupt state
+"   blx     r0                          \n"         // start executing the code of the new thread
 
 // when the new thread terminates, it returns here...
 // it is assumed that the sp at this point has its initial value (the thread's stack usage is balanced)
 
-"   cpsid i                             \n"         // disable interrupts
-"   mov r1, #1                          \n"         //
-"   str r0, [sp, #0]                    \n"         // save the return value
-"   str r1, [sp, #4]                    \n"         // set the "done" flag
+"   cpsid   i                           \n"         // disable interrupts
+"   mov     r1, #1                      \n"         //
+"   str     r0, [sp, #0]                \n"         // save the return value
+"   str     r1, [sp, #4]                \n"         // set the "done" flag
+    );
 
-"   ldmia r9!, {r3-r8, r10-ip, lr}      \n"         // pop the next thread from the pending thread stack, and return to it
-"   mov sp, r3                          \n"
-"   msr primask, ip                     \n"         // restore the new thread's interrupt state
+    start_switch2();
+    }
 
-    :
-    : [fn]"r"(fn), [newsp]"r"(newsp)
-    : 
+__NOINLINE
+__NAKED
+void Thread::start_switch2()
+    {
+    __asm__ __volatile__(
+"   ldmia   r9!, {r3-r8, r10-ip, lr}    \n"         // pop the next thread from the pending thread stack, and return to it
+"   mov     sp, r3                      \n"
+"   msr     primask, ip                 \n"         // restore the new thread's interrupt state
+"   bx      lr                          \n"
     );
     }
 

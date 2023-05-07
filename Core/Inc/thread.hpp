@@ -104,8 +104,14 @@ class Thread
         }
 
 
-    bool resume();                                              // resume a suspended thread
     void suspend();                                             // suspend self until resumed
+    bool resume();                                              // resume a suspended thread
+
+    static void suspend_switch();                               // an entry point to resume after the condition is tested (for Ozone RTOS awareness)
+    static void resume_switch();                                // an entry point to resume after the condition is tested (for Ozone RTOS awareness)
+    static void start_switch1();                                // an entry point to resume after the condition is tested (for Ozone RTOS awareness)
+    static void start_switch2();                                // an entry point to resume after the condition is tested (for Ozone RTOS awareness)
+
 
     // spawn a new thread
     template<unsigned N>
