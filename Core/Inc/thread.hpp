@@ -80,8 +80,6 @@ class Thread
 
     // r9 is reserved by Thread for the thread stack pointer
 
-    static void start(THREADFN *fn, char *sp);                  // an internal function to start a new thread
-
     public:
 
     // Constructor
@@ -105,10 +103,12 @@ class Thread
 
 
     void suspend();                                             // suspend self until resumed
-    bool resume();                                              // resume a suspended thread
+    void suspend_switch();                                      // an entry point to resume after the condition is tested (for Ozone RTOS awareness)
 
-    static void suspend_switch();                               // an entry point to resume after the condition is tested (for Ozone RTOS awareness)
-    static void resume_switch();                                // an entry point to resume after the condition is tested (for Ozone RTOS awareness)
+    bool resume();                                              // resume a suspended thread
+    void resume_switch();                                       // an entry point to resume after the condition is tested (for Ozone RTOS awareness)
+
+    static void start(THREADFN *fn, char *sp);                  // an internal function to start a new thread
     static void start_switch1();                                // an entry point to resume after the condition is tested (for Ozone RTOS awareness)
     static void start_switch2();                                // an entry point to resume after the condition is tested (for Ozone RTOS awareness)
 

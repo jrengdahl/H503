@@ -43,8 +43,8 @@ void OnProjectLoad (void) {
   OS.AddContextSwitchSymbol("Thread::resume_switch");
   OS.AddContextSwitchSymbol("Thread::start_switch1");
   OS.AddContextSwitchSymbol("Thread::start_switch2");
-  OS.AddContextSwitchSymbol("threadFIFO::suspend_switch");
-  OS.AddContextSwitchSymbol("threadFIFO::resume_switch");
+  OS.AddContextSwitchSymbol("ThreadFIFO::suspend_switch");
+  OS.AddContextSwitchSymbol("ThreadFIFO::resume_switch");
 
 }
 

@@ -40,7 +40,7 @@ bool Thread::resume()
 "   str     sp, [r9, #-4]!              \n"         // save the SP into the Thread
     );
 
-    resume_switch();
+    this->resume_switch();
 
     __asm__ __volatile__(
 "0: mov     r0, #0                      \n"         // return false
@@ -77,7 +77,7 @@ void Thread::suspend()
 "   stm     r0, {r4-r8, r10-ip, lr}     \n"         // save the non-volatile registers of the current thread into the Thread instance
     );
 
-    suspend_switch();
+    this->suspend_switch();
     }
 
 __NOINLINE
@@ -116,6 +116,9 @@ __NOINLINE
 __NAKED
 void Thread::start(THREADFN *fn, char *newsp)
     {
+    (void)fn;
+    (void)newsp;
+
     __asm__ __volatile__(
 "   mrs     ip, primask                 \n"         // save interrupt state
 "   cpsid   i                           \n"         // disable interrupts

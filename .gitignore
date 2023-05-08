@@ -4,3 +4,4 @@
 /H503.kicad/fp-info-cache
 *.bak
 /H503.kicad/H503.xml
+/Core/Src/thread.cpp.o
