@@ -1,4 +1,4 @@
-unsigned strlen(const char *p);
+extern "C" unsigned strlen(const char *p);
 
 extern "C"
 char *strcat(char *dest, const char *src)

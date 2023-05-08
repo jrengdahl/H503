@@ -35,9 +35,17 @@ void OnProjectLoad (void) {
   //
   // User settings
   //
+  Edit.Preference (PREF_TIMESTAMP_FORMAT, TIMESTAMP_FORMAT_INST_CNT);
   Edit.SysVar (VAR_TRACE_TIMESTAMPS_ENABLED, 0);
   Edit.SysVar (VAR_TRACE_CORE_CLOCK, 50000000);
   File.Open ("C:/STM32/H503/Debug/H503.elf");
+  OS.AddContextSwitchSymbol("Thread::suspend_switch");
+  OS.AddContextSwitchSymbol("Thread::resume_switch");
+  OS.AddContextSwitchSymbol("Thread::start_switch1");
+  OS.AddContextSwitchSymbol("Thread::start_switch2");
+  OS.AddContextSwitchSymbol("ThreadFIFO::suspend_switch");
+  OS.AddContextSwitchSymbol("ThreadFIFO::resume_switch");
+
 }
 
 /*********************************************************************

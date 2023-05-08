@@ -22,72 +22,18 @@
 
 static const unsigned THREAD_FIFO_DEPTH = 15;    // must be a power of 2, minus 1, if this is changed, the inline ASM must be updated
 
-class threadFIFO : public FIFO<Thread, THREAD_FIFO_DEPTH>
+class ThreadFIFO : public FIFO<Thread, THREAD_FIFO_DEPTH>
     {
     public:
 
-    __OPTIMIZE("Os")
-    __NOINLINE
-    bool suspend()
-        {
-        __asm__ __volatile__(
-    "   mrs     ip, primask                 \n"         // save interrupt state
-    "   cpsid   i                           \n"         // disable interrupts
-    "   ldrd    r2, r3, [r0, #0x280]        \n"         // get nextin (r2) and nextout (r3)
-    "   add     r1, r2, #1                  \n"         // increment nextin
-    "   and     r1, #15                     \n"         // wrap if needed
-    "   cmp     r1, r3                      \n"         // if updated nextin == nextout, the FIFO is full
-    "   beq     0f                          \n"         // so go return false
-    "   str     r1, [r0, #0x280]            \n"         // update nextout
-    "   mov     r3, #40                     \n"         // calc address of indexed Thread in the FIFO
-    "   mla     r1, r2, r3, r0              \n"         // nextin * 40 + base address
-    "   mov     r3, sp                      \n"         // save previous thread on the stack
-    "   stm     r1,  {r3-r8, r10-ip, lr}    \n"         //
-    "   ldmia   r9!, {r3-r8, r10-ip, lr}    \n"         // get new thread from FIFO
-    "   mov     sp, r3                      \n"         // restore the new thead's sp
-    "   msr     primask, ip                 \n"         // and interrupt state interrupt state
-    "   mov     r0, #1                      \n"         // return true
-    "   bx      lr                          \n"         //
-
-    "0: msr     primask, ip                 \n"         // restore caller's interrupt state
-        );
-
-        return false;
-        }
-
-
-    __OPTIMIZE("Os")
-    __NOINLINE
-    bool resume()
-        {
-        __asm__ __volatile__(
-    "   mrs     ip, primask                 \n"         // save interrupt state
-    "   cpsid   i                           \n"         // disable interrupts
-    "   ldrd    r3, r2, [r0, #0x280]        \n"         // get nextin (r3) and nextout (r2)
-    "   cmp     r2, r3                      \n"         // if equal, the FIFO is empty
-    "   beq     0f                          \n"         // so go return false
-    "   add     r3, r2, #1                  \n"         // increment nextout
-    "   and     r3, #15                     \n"         // wrap if needed
-    "   str     r3, [r0, #0x284]            \n"         // update nextout
-    "   mov     r3, #40                     \n"         // calc address of indexed Thread in the FIFO
-    "   mla     r2, r3, r2, r0              \n"         // nextout * 40 + base address
-    "   mov     r3, sp                      \n"         // save previous thread on the stack
-    "   stmdb   r9!, {r3-r8, r10-ip, lr}    \n"         //
-    "   ldm     r2,  {r3-r8, r10-ip, lr}    \n"         // get new thread from FIFO
-    "   mov     sp, r3                      \n"         // restore the new thead's sp
-    "   msr     primask, ip                 \n"         // and interrupt state interrupt state
-    "   mov     r0, #1                      \n"         // return true
-    "   bx      lr                          \n"         //
-
-    "0: msr     primask, ip                 \n"         // restore caller's interrupt state
-        );
-
-        return false;
-        }
+    bool suspend();
+    void suspend_switch();
+    bool resume();
+    void resume_switch();
     };
 
 
-extern threadFIFO DeferFIFO;
+extern ThreadFIFO DeferFIFO;
 
 
 // suspend the current thread at the DeferFIFO.

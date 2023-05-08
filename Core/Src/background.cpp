@@ -22,7 +22,7 @@
 // level until it calls yield, so in some cases, that thread may call
 // yield shortly after the call to suspend.
 
-threadFIFO DeferFIFO;
+ThreadFIFO DeferFIFO;
 
 extern Thread txPort;                               // ports for use by the console (serial or USB VCP)
 extern Thread rxPort;

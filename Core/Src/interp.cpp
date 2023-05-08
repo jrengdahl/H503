@@ -23,6 +23,8 @@ extern void bear();
 extern "C" char *strchrnul(const char *s, int c);   // POSIX function but not included in newlib, see https://linux.die.net/man/3/strchr
 extern void summary(unsigned char *, unsigned, unsigned, int);
 void RamTest(uint8_t *addr, unsigned size, unsigned repeat, unsigned limit);
+extern "C" void SystemClock_PLL_Config(unsigned);
+extern "C" void SystemClock_HSI_Config(void);
 
 // print a large number with commas
 void commas(uint32_t x)
@@ -273,6 +275,25 @@ uint32_t interp()
 
 
 //              //                              //
+        HELP(  "clk <freq in MHz>               set CPU clock")
+        else if(buf[0]=='c' && buf[1]=='l' && buf[2]=='k')
+            {
+            if(isdigit(*p))                     // if an arg is given
+                {
+                unsigned clk = getdec(&p);      // set the clock freuqnecy to the new value
+                SystemClock_HSI_Config();       // have to deselect the PLL before reprogramming it
+                SystemClock_PLL_Config(clk);    // set the PLL to the new frequency
+                }
+
+            printf("CPU clock is %u MHz\n", CPU_CLOCK_FREQUENCY);
+            if(CPU_CLOCK_FREQUENCY > 100)
+                {
+                printf("trace may not be stable at frequencies over 100 MHz\n");
+                }
+            }
+
+
+//              //                              //
         HELP(  "c <count>                       calibrate")
         else if(buf[0]=='c' && buf[1]==' ')
             {
@@ -389,7 +410,7 @@ uint32_t interp()
 
 
 //              //                              //
-        HELP(  "t <num>                        run the thread test")
+        HELP(  "t <num>                         run the thread test")
         else if(buf[0]=='t' && buf[1]==' ')
             {
             unsigned ticks;

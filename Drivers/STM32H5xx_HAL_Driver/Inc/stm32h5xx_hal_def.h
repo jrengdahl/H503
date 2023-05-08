@@ -212,7 +212,7 @@ typedef enum
 /* ARM & GNUCompiler
 
 */
-#ifndef __NOINLINE
+#ifdef __NOLINE
 #define __NOINLINE __attribute__ ( (noinline) )
 #endif
 

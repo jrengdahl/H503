@@ -115,7 +115,7 @@ uint8_t CDC_Transmit_FS(uint8_t* Buf, uint16_t Len);
 
 void vcp_init ();
 
-inline int vcp_txready()
+static inline int vcp_txready()
     {
     USBD_CDC_HandleTypeDef *hcdc = (USBD_CDC_HandleTypeDef*)hUsbDeviceFS.pClassData;
     return hcdc->TxState == 0;
