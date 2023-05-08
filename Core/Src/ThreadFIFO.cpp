@@ -38,8 +38,8 @@ bool ThreadFIFO::suspend()
     this->suspend_switch();
 
     __asm__ __volatile__(
-    "0: msr     primask, ip                 \n"         // restore caller's interrupt state
-    "   mov     r0, #0                      \n"
+    "0: mov     r0, #0                      \n"
+    "   msr     primask, ip                 \n"         // restore caller's interrupt state
     "   bx      lr                          \n"
     );
 
@@ -53,8 +53,8 @@ void ThreadFIFO::suspend_switch()
     __asm__ __volatile__(
     "   ldmia   r9!, {r3-r8, r10-ip, lr}    \n"         // get new thread from FIFO
     "   mov     sp, r3                      \n"         // restore the new thead's sp
-    "   msr     primask, ip                 \n"         // and interrupt state interrupt state
     "   mov     r0, #1                      \n"         // return true
+    "   msr     primask, ip                 \n"         // and interrupt state interrupt state
     "   bx      lr                          \n"         //
     );
     }
@@ -82,8 +82,8 @@ bool ThreadFIFO::resume()
     this->resume_switch();
 
     __asm__ __volatile__(
-    "0: msr     primask, ip                 \n"         // restore caller's interrupt state
-    "   mov     r0, #0                      \n"
+    "0: mov     r0, #0                      \n"
+    "   msr     primask, ip                 \n"         // restore caller's interrupt state
     "   bx      lr                          \n"
     );
 
@@ -97,8 +97,8 @@ void ThreadFIFO::resume_switch()
     __asm__ __volatile__(
     "   ldm     r2,  {r3-r8, r10-ip, lr}    \n"         // get new thread from FIFO
     "   mov     sp, r3                      \n"         // restore the new thead's sp
-    "   msr     primask, ip                 \n"         // and interrupt state interrupt state
     "   mov     r0, #1                      \n"         // return true
+    "   msr     primask, ip                 \n"         // and interrupt state interrupt state
     "   bx      lr                          \n"         //
     );
     }
