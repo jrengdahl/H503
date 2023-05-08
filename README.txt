@@ -14,6 +14,13 @@ The STM32H503 is a low-end microcontroller by ST Microelectronics:
 -- typical peripherals for a small micro, including USB Device.
 -- ETM trace port
 
+When this chip first became available in early March of 2023, it was in
+stock at Mouser for $4.33, and I was able to obtain a few. More recently
+I see that they are out of stock with availability nearly a year out.
+Try findchips.com to search for availability. Often such chips are more
+easily available on a Nucleo board (although the Nucleo boards do not
+have trace connectors).
+
 
 THE FIRMWARE
 
@@ -28,9 +35,11 @@ a simple command line interpeter with the following commands:
 -- input from a pin
 -- output to a pin
 -- calibrate the CPU clock (to make sure the crystal, PLL, and spin-delay loop are correct)
+-- set the CPU clock to a given frequency
 -- execute a single LDR to a given memory location
 -- execute a single STR to a given memory location
 -- print a summary of the flash and RAM
+-- run a benchmark of the thread switcher
 -- print the help
 
 The command line processor is simple and easily expanded with new commands.
@@ -134,6 +143,17 @@ for the board design, which shows a possible maximum usage of the pins.
 The separate H503.ioc used by the firmware project only enables the pins
 that are currently supported by the firmware.
 
+Building the board is not hard. I do my soldering under a 1959
+StereoZoom microscope using a very fine-tip pencil, and SMT solder paste
+applied with a toothpick, or wire solder for through-hole parts. One
+thing to watch out for is the USB connector. If you use too little
+solder you risk ripping the connector off the board if you are not real
+careful with the USB cable. If you use too much solder it can puddle
+under the connector and short out the signal pins.
+
+
+TRACE
+
 One of my retirement presents to myself was a Segger J-Trace probe, so
 I put a 20-pin trace port on this board rather than the usual four-pin
 Serial Wire Debug port. If you don't have a trace probe you can populate
@@ -149,13 +169,78 @@ hobbyist to obtain. That is why I have been focusing on the L412, and
 more recently the H503. (Try lcsc.com if you need M7 chips, I found some
 affordable H7B0).
 
-Trace is not working yet.
+In order to use ETM trace with Cortex-M4 and Cortex-M33 chips, the
+following is required:
 
-Building the board is not hard. I do my soldering under a 1959
-StereoZoom microscope using a very fine-tip pencil, and SMT solder paste
-applied with a toothpick, or wire solder for through-hole parts. One
-thing to watch out for is the USB connector. If you use too little
-solder you risk ripping the connector off the board if you are not real
-careful with the USB cable. If you use too much solder it can puddle
-under the connector and short out the signal pins.
+-- a chip that has trace port or on-chip trace buffer. As far as I know,
+all STM32 in 100 pin packages or larger have trace ports. Trace ports on
+smaller pinouts is less common. There is no easy way to find which chips
+have trace capability, other than reading many data sheets. So far I
+have found the STM32H503 and STM32L412 in LQFP-64, and the L412 in
+LQFP-32, have 5-pin trace ports. In fact, the L412 seems to be the only
+STM32 in LQFP-32 that has a trace port.
+
+Some Cortex-M7 chips from ST Micro have 2K or 4K on-chip trace buffers.
+These can be used with Ozone and an inexpensize J-Link Edu, though the
+trace depth is limited.
+
+-- a trace probe (unless you have an on-chip trace buffer). Trace probes
+are expensive. I am familiar with Lauterbach, which costs in the
+vicinity of $10,000. My Segger J-Trace was around $1800. In the UK or EU
+check out pdqlogic.com. Some people have used inexpensive USB logic
+analyzers with the Sigrok software to capture trace, but such a solution
+is harder to use (https://essentialscrap.com/tips/arm_trace).
+
+-- a trace capapble debugger. I use Segger Ozone, which is included 
+with J-Trace, or it is free for non-commercial use.
+
+-- you have to allocate from two to five pins for the trace port. I have
+always used the full five pins.
+
+-- Your board has to have a trace port connector. The traces from the
+chip to the connector should be laid out with high speed signalling in
+mind. In theory, it might be possible to wire a trace probe to I/O pins
+of a Nucleo board, but I would not expect this to work well at fast
+clock rates. Though the H503 can run up to 250 MHz, on my board the
+trace becomes flakey above 100 MHz.
+
+-- You need to configure the trace pins. There are two ways to do this:
+
+     -- your software can setup the pins and the ETM. Currently my L412
+        software does it this way. I based my ETM setup code on this
+        project: https://github.com/PetteriAimonen/STM32_Trace_Example
+
+     -- You need to obtain or write an Ozone script to setup the trace
+        pins. Once the pins are setup, Ozone can deal with the ETM and
+        TPIU on its own. Segger provides compiled (.pex) scripts for
+        certain chips. If your chip is not supported, or you have used a
+        different pinout than Segger used, you either have to get them
+        to create a .pex for you, or you can write your own script. This
+        project includes a redistributable JLinkScript which sets up the
+        pins for the H503.
+
+   Having tried both methods, using the script works a lot better. Note
+   that the H503 uses a different ETM than the L412. The L412 code will
+   not work for the H503. It would be fairly difficult to research and
+   write the ETM-M33 setup code, since you not only have to deal with
+   the pins, but also the ETM and TPIU, for which I could find no
+   easy-to-use documentation or example code. Also, when using the
+   script, the trace starts at powerup, whereas if your software sets up
+   the ETM, the trace only works after your code runs, and you have to
+   stop and restart your program after the setup code before Ozone
+   starts receiving trace data.
+
+
+RTOS-AWARE TRACE
+
+Segger's Ozone debugger can detect RTOS thread switches in order to make
+the trace easier to read and understand. If you are using a supported
+RTOS they have RTOS-awareness modules you can download and use. If your
+RTOS is not supported, or home-brewed like mine, you can tell Ozone
+about the thread switching code in the Ozone startup script. The script
+included with this project does that. There are two prequisites: your
+thread switch code must exist in a subroutine call that Ozone can find,
+and you have to use Dwarf-4 debug info. Newer editions of GCC, such as
+12.2, emit Dwarf-5 debug data by default, so you have to pass -gdwarf-4
+to the GCC and G++ compilers.
 
