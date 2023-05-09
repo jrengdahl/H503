@@ -14,6 +14,7 @@
 #include "main.h"
 #include "usbd_cdc_if.h"
 #include "cyccnt.hpp"
+#include "libgomp.hpp"
 
 // The DeferFIFO used by yield, for rudimentary time-slicing.
 // Note that the only form of "time-slicing" occurs when a thread
@@ -57,6 +58,8 @@ void background()                                       // powerup init and back
     InitCyccnt();                                       // enable the cycle counter
 
     CPACR |= CPACR_VFPEN;                               // enable the floating point coprocessor
+
+    libgomp_init();
 
     Thread::spawn(interp, InterpStack);                 // spawn the command line interpreter on core 0
 

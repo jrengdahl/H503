@@ -11,7 +11,7 @@
 // -- running: it currently is running on the CPU and its state is contained in the CPU registers.
 // -- suspended: the thread is saved in a Thread object, and is waiting to be resumed. A thread in this
 //    state is typically waiting for an event.
-// -- pending: a thread that has resumed another thread has it's state pushed on the pending thread stack.
+// -- pending: a thread that has resumed another thread has its state pushed on the pending thread stack.
 //    A thread in this state is waiting for a running thread to suspend itself.
 //
 // The threading system is non-preemptive. That is, a thread never leaves the running state other than

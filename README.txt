@@ -44,6 +44,8 @@ a simple command line interpeter with the following commands:
 
 The command line processor is simple and easily expanded with new commands.
 
+The firmware takes about 32K of flash and 10K of RAM.
+
 For similar L412 and H743 projects, rather than using an FTDI
 USB-to-serial cable, or an on-board USB-to-serial chip, I decided to
 learn how to use the native on-chip USB for the serial console. I got a
@@ -60,7 +62,7 @@ chips (the H743 and L552), and adapt it to the H503.
 THREADS
 
 I usually write bare metal firmware, with no OS or RTOS, but I use a
-simple non-preemtive threading system, which enables me to architect a
+simple non-preemptive threading system, which enables me to architect a
 system as a set of cooperating processes. As the concept developed over
 many years it has gone by the name of "wait-wake", "plastic fork", and
 "not-an-OS", but currently goes by the name of "Bear Metal Threads".
@@ -103,8 +105,8 @@ follow the rule and clobbers r9.
 
 -- GCC includes OpenMP, however it is only enabled for platforms that
 have a large OS, such as Linux or Windows. The bare metal versions of
-the toolchain do not have OpenMP enabled. My bare metal toolchain has
-OPenMP enabled.
+the toolchain do not have OpenMP enabled. My build of the GCC bare metal
+toolchain has OpenMP enabled.
 
 The Cortex-M33 GCC 12.2 toolchain to be used with this project is found at:
 https://github.com/jrengdahl/cross/releases
@@ -132,16 +134,16 @@ Interesting things about the board are:
 -- trace port
 -- SPI flash
 
-Otherwise the board is very minimal: power reulator, crystal oscillator,
-connectors, a reset button, the BOOT0 button is also an GPIO input, and
-one LED. I put a Winbond SPI flash on it because I want to learn how to
-use them.
+Otherwise the board is very minimal: power regulator, crystal
+oscillator, connectors, a reset button, the BOOT0 button is also an GPIO
+input, and one LED. I put a Winbond SPI flash on it because I want to
+learn how to use them.
 
-The microcontroller pinout is recorded in a CubeMX project,
+The microcontroller pinout is captured in a CubeMX project,
 H503.kicad/H503.ioc. This is a sample CubeMX project I used as reference
 for the board design, which shows a possible maximum usage of the pins.
-The separate H503.ioc used by the firmware project only enables the pins
-that are currently supported by the firmware.
+The separate ./H503.ioc used by the firmware project only enables the
+pins that are currently supported by the firmware.
 
 Building the board is not hard. I do my soldering under a 1959
 StereoZoom microscope using a very fine-tip pencil, and SMT solder paste
@@ -174,7 +176,7 @@ following is required:
 
 -- a chip that has trace port or on-chip trace buffer. As far as I know,
 all STM32 in 100 pin packages or larger have trace ports. Trace ports on
-smaller pinouts is less common. There is no easy way to find which chips
+smaller pinouts are less common. There is no easy way to find which chips
 have trace capability, other than reading many data sheets. So far I
 have found the STM32H503 and STM32L412 in LQFP-64, and the L412 in
 LQFP-32, have 5-pin trace ports. In fact, the L412 seems to be the only
@@ -206,18 +208,19 @@ trace becomes flakey above 100 MHz.
 
 -- You need to configure the trace pins. There are two ways to do this:
 
-     -- your software can setup the pins and the ETM. Currently my L412
-        software does it this way. I based my ETM setup code on this
-        project: https://github.com/PetteriAimonen/STM32_Trace_Example
+     -- your software can setup the pins and the ETM at powerup.
+        Currently my L412 software does it this way. I based my ETM
+        setup code on this project:
+        https://github.com/PetteriAimonen/STM32_Trace_Example
 
-     -- You need to obtain or write an Ozone script to setup the trace
+     -- You can obtain or write an Ozone script to setup the trace
         pins. Once the pins are setup, Ozone can deal with the ETM and
         TPIU on its own. Segger provides compiled (.pex) scripts for
         certain chips. If your chip is not supported, or you have used a
         different pinout than Segger used, you either have to get them
         to create a .pex for you, or you can write your own script. This
-        project includes a redistributable JLinkScript which sets up the
-        pins for the H503.
+        project includes a redistributable .jdebug script which sets up
+        the pins for the H503.
 
    Having tried both methods, using the script works a lot better. Note
    that the H503 uses a different ETM than the L412. The L412 code will
@@ -237,10 +240,10 @@ Segger's Ozone debugger can detect RTOS thread switches in order to make
 the trace easier to read and understand. If you are using a supported
 RTOS they have RTOS-awareness modules you can download and use. If your
 RTOS is not supported, or home-brewed like mine, you can tell Ozone
-about the thread switching code in the Ozone startup script. The script
-included with this project does that. There are two prequisites: your
-thread switch code must exist in a subroutine call that Ozone can find,
-and you have to use Dwarf-4 debug info. Newer editions of GCC, such as
-12.2, emit Dwarf-5 debug data by default, so you have to pass -gdwarf-4
-to the GCC and G++ compilers.
+about the thread switching code in the Ozone startup script. The .jdebug
+script included with this project does that. There are two prequisites:
+your thread switch code must exist in a subroutine call that Ozone can
+find, and you have to use Dwarf-4 debug info. Newer editions of GCC,
+such as 12.2, emit Dwarf-5 debug data by default, so you have to pass
+-gdwarf-4 to the GCC and G++ compilers.
 

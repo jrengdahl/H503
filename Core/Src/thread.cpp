@@ -5,7 +5,7 @@
 // BSD license -- see the accompanying LICENSE file
 
 
-// Loading or storing the sp using ldr or str generate the warning:
+// Loading or storing the sp using ldr or str generates the warning:
 // "This instruction may be unpredictable if executed on M-profile cores with interrupts enabled."
 // Since the instructions below which trigger this warning are executed with interrupts off,
 // it is safe to ignore the warning. You can add the option:
@@ -89,11 +89,11 @@ void Thread::suspend_switch()
 "   ldmia   r9!, {r4-r8, r10-ip, lr}    \n"         // pop the non-volatile registers of the most recently active thread on the pending stack
 "   msr     primask, ip                 \n"         // restore the new thread's interrupt state
 "   bx      lr                          \n"         // r0 will be non-zero on return to indicate that the corresponding resume succeeded
-    );                                              // return to the un-pending thread right after it's call to resume
+    );                                              // return to the un-pending thread right after its call to resume
     }
 
 
-// Start a new thread, given it's code and initial stack pointer.
+// Start a new thread, given its code and initial stack pointer.
 // args: fn:    a pointer to a subroutine which will be run as a thread
 //       newsp: the initial stack pointer of the new thread
 
@@ -108,7 +108,7 @@ void Thread::suspend_switch()
 // executing after the call to "start". It will most likely continue executing
 // before the new thread terminates.
 //
-// When the new thread terminates by returning from it's subroutine, it returns
+// When the new thread terminates by returning from its subroutine, it returns
 // to this code, which will run the next thread from the pending stack. This
 // is not necessarily the thread which created the terminated thread.
 

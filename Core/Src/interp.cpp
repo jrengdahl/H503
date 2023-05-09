@@ -49,6 +49,7 @@ void commas(uint32_t x)
 
 char buf[INBUFLEN];
 
+// a simple thread used to benchmark the thread switching calls
 char TestStack[1024];
 Thread TestPort;
 unsigned TestCount = 0;
