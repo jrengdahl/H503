@@ -13,21 +13,21 @@
 // to suppress the assembler warning. I recommend that you remove that option if you make any
 // changes to this module, until you have tested the changes.
 
+#include <context.hpp>
 #include <stdint.h>
 #include "cmsis.h"
-#include "thread.hpp"
 
 // Define the maximum depth of the thread stack -- how deep can "resume" calls be nested.
 const unsigned THREAD_DEPTH = 8;
 
 // This is the pending thread stack.
-static Thread thread_stack[THREAD_DEPTH];
+static Context thread_stack[THREAD_DEPTH];
 
 // Push the current thread onto the pending stack, and
 // resume a thread saved in a Thread object.
 __NOINLINE
 __NAKED
-bool Thread::resume()
+bool Context::resume()
     {
     __asm__ __volatile__(
 "   mrs     ip, primask                 \n"         // save interrupt state
@@ -53,7 +53,7 @@ bool Thread::resume()
 
 __NOINLINE
 __NAKED
-void Thread::resume_switch()
+void Context::resume_switch()
     {
     __asm__ __volatile__(
 "   mov     sp, r2                      \n"         // load sp of new thread
@@ -68,7 +68,7 @@ void Thread::resume_switch()
 // register set, and resume running it.
 __NOINLINE
 __NAKED
-void Thread::suspend()
+void Context::suspend()
     {
     __asm__ __volatile__(
 "   mrs     ip, primask                 \n"         // save interrupt state
@@ -82,7 +82,7 @@ void Thread::suspend()
 
 __NOINLINE
 __NAKED
-void Thread::suspend_switch()
+void Context::suspend_switch()
     {
     __asm__ __volatile__(
 "   ldr     sp, [r9], #4                \n"         // pop the new sp from the pending Thread
@@ -114,7 +114,7 @@ void Thread::suspend_switch()
 
 __NOINLINE
 __NAKED
-void Thread::start(THREADFN *fn, char *newsp)
+void Context::start(THREADFN *fn, char *newsp)
     {
     (void)fn;
     (void)newsp;
@@ -131,7 +131,7 @@ void Thread::start(THREADFN *fn, char *newsp)
 
 __NOINLINE
 __NAKED
-void Thread::start_switch1()
+void Context::start_switch1()
     {
     __asm__ __volatile__(
 "   mov     sp, r1                      \n"         // setup the new thread's stack
@@ -155,7 +155,7 @@ void Thread::start_switch1()
 
 __NOINLINE
 __NAKED
-void Thread::start_switch2()
+void Context::start_switch2()
     {
     __asm__ __volatile__(
 "   ldmia   r9!, {r3-r8, r10-ip, lr}    \n"         // pop the next thread from the pending thread stack, and return to it
@@ -168,7 +168,7 @@ void Thread::start_switch2()
 
 // init the threading system
 // At present, this consists only of setting the pending thread stack pointer
-void Thread::init()
+void Context::init()
     {
     for(auto &x : thread_stack)
         {

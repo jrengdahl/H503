@@ -4,20 +4,21 @@
 // BSD license -- see the accompanying LICENSE file
 
 
+#include <context.hpp>
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
+#include <ContextFIFO.hpp>
 #include <math.h>
 #include "cmsis.h"
 #include "local.h"
-#include "thread.hpp"
-#include "threadFIFO.hpp"
 #include "bogodelay.hpp"
 #include "serial.h"
 #include "random.hpp"
 #include "cyccnt.hpp"
 #include "main.h"
 #include "boundaries.h"
+#include "omp.h"
 
 extern void bear();
 extern "C" char *strchrnul(const char *s, int c);   // POSIX function but not included in newlib, see https://linux.die.net/man/3/strchr
@@ -51,7 +52,7 @@ char buf[INBUFLEN];
 
 // a simple thread used to benchmark the thread switching calls
 char TestStack[1024];
-Thread TestPort;
+Context TestPort;
 unsigned TestCount = 0;
 uint32_t TestThread()
     {
@@ -419,10 +420,10 @@ uint32_t interp()
 
             count = getdec(&p);
             TestCount = count;
-            Thread::spawn(TestThread, TestStack);
+            Context::spawn(TestThread, TestStack);
             Elapsed();
 
-            while(!Thread::done(TestStack))
+            while(!Context::done(TestStack))
                     {
                     TestPort.resume();
                     TestPort.resume();
@@ -443,7 +444,41 @@ uint32_t interp()
              }
 
 
+//              //                              //
+        HELP(  "tmp                             read the temperature sensor")
+        else if(buf[0]=='t' && buf[1]=='m' && buf[2]=='p')
+            {
+            extern int read_temperature();
+            int last_avg = -1;
+            int repeat = 50;
+            int avg = 30;
+            int count = 0;
+            int last_count = 0;
 
+            if(isdigit(*p))                                                 // while there is any data left on the command line
+                {
+                repeat = getdec(&p);                                        // get the count
+                }
+
+            while(repeat && !ControlC)
+                {
+                int tmp = read_temperature();
+
+                avg = (avg*9 + tmp)/10;
+
+                if(avg-last_avg > 1 || last_avg-avg > 1)
+                    {
+                    printf("temperature: %3d C, %3d F, avg = %3d C, delta = %d\n", tmp, (tmp*18 + 325)/10, avg, count - last_count);
+                    last_avg = avg;
+                    last_count = count;
+                    -- repeat;
+                    }
+
+                ++count;
+
+                yield();
+                }
+            }
 
 
 

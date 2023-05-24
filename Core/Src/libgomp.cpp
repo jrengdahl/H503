@@ -12,14 +12,14 @@
 // BSD license -- see the accompanying LICENSE file
 
 
+#include <context.hpp>
+#include <ContextFIFO.hpp>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
 #include <omp.h>
-#include "thread.hpp"
 #include "FIFO.hpp"
-#include "ThreadFIFO.hpp"
 #include "libgomp.hpp"
 
 
@@ -56,12 +56,16 @@ static FIFO<task *, GOMP_NUM_TASKS> ready_tasks;
 
 struct omp_thread
     {
-    Thread thread;          // the thread's registers
+    Context context;        // the thread's registers
+    int id;                 // a unique ID for each thread, also the index into the thread table
+    Context *next;          // link to the next thread, when chained
     struct task *task = 0;  // the thread's implicit task, nonzero if running
     int team = 0;           // the current team number
     unsigned single = 0;    // counts the number of "#pragma omp single" seen
     bool arrived = false;   // arrived at a barrier, waiting for other threads to arrive
     bool mwaiting = false;  // waiting on a mutex
+    char stack_low;         // low address of the stack (for debug)
+    char *stack_high;       // high address of the stack pointer
     };
 
 // an array of omp_threads
@@ -88,11 +92,11 @@ int dyn_var = 0;
 
 static int gomp_num_threads = GOMP_DEFAULT_NUM_THREADS;
 
-int omp_verbose = 0;
+int omp_verbose = OMP_VERBOSE_DEFAULT;
 
 
 
-// this is the code for every member of the thread pool 
+// this is the code for every member of the thread pool
 
 static uint32_t gomp_worker()
     {
@@ -114,7 +118,7 @@ static uint32_t gomp_worker()
             --teams[team].tasks;
             omp_threads[id].task = 0;                   // forget the completed task
             }
-        else if(ready_tasks.take(task))                 // if there are any explicit tasks waiting for a thread
+        else if(ready_tasks.take(task))                 // if there are any explicit tasks waiting for a context
             {
             if(omp_verbose>=2)printf("start explicit task %8p, id = %3d\n", task, id);
             fn = task->fn;                              // run the explicit task
@@ -148,7 +152,7 @@ void libgomp_init()
 
     for(int i=0; i<GOMP_MAX_NUM_THREADS; i++)       // start all the omp_threads
         {
-        Thread::spawn(gomp_worker, gomp_stacks[i]);         
+        Context::spawn(gomp_worker, gomp_stacks[i]);         
         }
     }
 
@@ -156,8 +160,8 @@ void libgomp_init()
 
 extern "C"
 void GOMP_parallel(
-    TASKFN *fn,                                     // the thread code
-    char *data,                                     // the thread local data
+    TASKFN *fn,                                     // the context code
+    char *data,                                     // the context local data
     unsigned num_threads,                           // the requested number of threads
     unsigned flags __attribute__((__unused__)))     // flags (ignored for now)
     {
@@ -216,7 +220,7 @@ void GOMP_parallel(
 extern "C"
 void GOMP_barrier()
     {
-    int id = omp_get_thread_num();              // the id if this thread
+    int id = omp_get_thread_num();              // the id if this context
     int num = omp_get_num_threads();            // the number of threads in the current team
 
     omp_threads[id].arrived = true;             // signal that this thread has reached the barrier
@@ -225,7 +229,7 @@ void GOMP_barrier()
         {
         if(omp_threads[i].arrived == false)
             {                                   // get here if any team member has not yet arrived
-            omp_threads[id].thread.suspend();   // suspend this thread until all other threads have arrived
+            omp_threads[id].context.suspend();  // suspend this thread until all other threads have arrived
             return;                             // when resumed, some other thread has done all the barrier cleanup work, so just keep going
             }
         }
@@ -241,7 +245,7 @@ void GOMP_barrier()
         {
         if(i != id)                             // don't try to resume self
             {
-            omp_threads[i].thread.resume();     // resume the team member
+            omp_threads[i].context.resume();    // resume the team member
             }
         }
     }
@@ -255,7 +259,7 @@ void GOMP_critical_start()
     while(teams[team].mutex == true)
         {
         omp_threads[id].mwaiting = true;
-        omp_threads[id].thread.suspend();       // suspend this thread until it can grab the mutex
+        omp_threads[id].context.suspend();      // suspend this thread until it can grab the mutex
         omp_threads[id].mwaiting = false;
         }
 
@@ -285,7 +289,7 @@ void GOMP_critical_end()
 
         if(omp_threads[m].mwaiting == true)
             {
-            omp_threads[m].thread.resume();     // resume the next thread in the rotation
+            omp_threads[m].context.resume();    // resume the next context in the rotation
             return;
             }
         }
@@ -362,7 +366,7 @@ int GOMP_sections_next()                // for each thread that iterates the "se
 extern "C"
 int GOMP_sections_start(int num)        // each team member calls this once at the beginning of sections
     {
-    if(teams[team].sections_count == 0) // when the first thread gets here
+    if(teams[team].sections_count == 0) // when the first context gets here
         {
         teams[team].sections = num;     // capture the number of sections
         teams[team].section = 1;        // init to the first section
@@ -551,7 +555,7 @@ void GOMP_task (    void (*fn) (void *),
             fn(data);
             }
         }
-    else                                        // else queue the task to be executed by another thread later
+    else                                        // else queue the task to be executed by another context later
         {
         char *argmem = (char *)malloc(arg_size + arg_align);                                    // allocate memory for data
         if(omp_verbose>=2)printf("malloc data %8p, id = %3d\n", argmem, id);

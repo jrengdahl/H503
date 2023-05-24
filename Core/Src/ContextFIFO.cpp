@@ -11,9 +11,9 @@
 // BSD license -- see the accompanying LICENSE file
 
 
+#include <context.hpp>
+#include <ContextFIFO.hpp>
 #include "cmsis.h"
-#include "thread.hpp"
-#include "ThreadFIFO.hpp"
 
 
 __NOINLINE

@@ -1,4 +1,4 @@
-// thread.hpp
+// Context.hpp
 
 // A simple but very fast threading system for bare metal ARM processors.
 //
@@ -9,9 +9,9 @@
 // A thread is represented by its non-volatile registers.
 // A thread can be in one of three states;
 // -- running: it currently is running on the CPU and its state is contained in the CPU registers.
-// -- suspended: the thread is saved in a Thread object, and is waiting to be resumed. A thread in this
+// -- suspended: the thread is saved in a Context object, and is waiting to be resumed. A thread in this
 //    state is typically waiting for an event.
-// -- pending: a thread that has resumed another thread has its state pushed on the pending thread stack.
+// -- pending: a thread that has resumed another thread has its state pushed on the pending context stack.
 //    A thread in this state is waiting for a running thread to suspend itself.
 //
 // The threading system is non-preemptive. That is, a thread never leaves the running state other than
@@ -24,7 +24,7 @@
 //    saved context because this threading system is non-preemptive -- a thread state change is only
 //    initiated by a subroutine call, and volatile registers do not need to be saved across a call.
 //    Furthermore, the pc is saved in lr by a subroutine call, thus the pc is not explicitly saved.
-// -- a stack, pointed to by sp. The Thread functions that receive a stack as an argument are passed a
+// -- a stack, pointed to by sp. The Context functions that receive a stack as an argument are passed a
 //    reference to an array of char. In this way the templated functions can determine the stack size,
 //    whereas if a pointer were passed the size information would be lost.
 //
@@ -32,7 +32,7 @@
 // concurrent threads run serially. Multiple threads can actually run concurrently on multiple cores.
 //
 // Memory available to a thread is either local (stack) or globally shared with all other threads.
-// This implmentation does not provide thread-private static memory. On single and multi-core systems
+// This implementation does not provide thread-private static memory. On single and multi-core systems
 // the threads share the same address space. It is assumed that the address space is coherent (all
 // threads see the same content for all addresses, regardless of cacheing or which core they are on).
 //
@@ -45,7 +45,7 @@
 //    suspend and resume routines.
 // 
 // Excluding the subroutine call and return, a thread switch costs only four instructions. On a 500 MHz
-// CPU this would be 40 nanoseconds. Compare this to 10 microseonds for a thread switch on a preemptive
+// CPU this would be 40 nanoseconds. Compare this to 10 microseconds for a thread switch on a preemptive
 // RTOS. Obviously, a fully preemptive, prioritized, time-sliced RTOS has its advantages, but where sheer
 // performance outweighs these advantages, a non-preemtive system such as this is necessary. The other
 // alternative would be to implement the firmware as a complex state machine, but 45 years experience coding
@@ -62,7 +62,7 @@
 typedef uint32_t THREADFN();
 
 // the context of a thread
-class Thread
+class Context
     {
     private:
 
@@ -78,12 +78,12 @@ class Thread
     uint32_t ip;        // holds the interrupt state
     uint32_t lr;        // holds the execution address
 
-    // r9 is reserved by Thread for the thread stack pointer
+    // r9 is reserved for the thread stack pointer
 
     public:
 
     // Constructor
-    Thread() : r3(0), r4(0), r5(0), r6(0), r7(0), r8(0), r10(0), r11(0), ip(0), lr(0)
+    Context() : r3(0), r4(0), r5(0), r6(0), r7(0), r8(0), r10(0), r11(0), ip(0), lr(0)
         {
         }
 

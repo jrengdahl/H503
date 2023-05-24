@@ -17,4 +17,6 @@ extern void libgomp_init();
 
 extern int omp_verbose;
 
+#define OMP_VERBOSE_DEFAULT 2
+
 #endif // LIBGOMP_H
