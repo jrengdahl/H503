@@ -43,7 +43,7 @@ int __io_getchar()                              // link the CMSIS syslib to the 
     }
 
 // refactored code: atomically wrap the test and wait for txready, then output the buffer
-static void vcp_writeblock(uint8_t* Buf, uint16_t Len)
+static void vcp_writeblock(uint8_t* Buf1, uint16_t Len1, uint8_t* Buf2 = 0, uint16_t Len2 = 0)
     {
     do
         {
@@ -56,7 +56,7 @@ static void vcp_writeblock(uint8_t* Buf, uint16_t Len)
                 }
             }
         }
-    while(CDC_Transmit_FS(Buf, Len) == USBD_BUSY);
+    while(CDC_Transmit_FS(Buf1, Len1, Buf2, Len2) == USBD_BUSY);
     }
 
 extern "C"
@@ -71,8 +71,7 @@ int _write(int file, const char *ptr, int len)
         pnl = strnchr(ptr, len, '\n');                          // see if there is a newline in the buffer
         if(pnl )
             {
-            vcp_writeblock((uint8_t *)ptr, pnl-ptr);            // if so, output the buffer up to before the newline
-            vcp_writeblock((uint8_t *)"\r\n", 2);               // output return and newline
+            vcp_writeblock((uint8_t *)ptr, pnl-ptr, (uint8_t *)"\r\n", 2); // if so, output the buffer up to before the newlin, followed by return and newline
 
             len -= pnl-ptr+1;                                   // skip over the newline in the buffer
             ptr = pnl+1;

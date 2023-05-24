@@ -4,7 +4,7 @@
 #ifndef LIBGOMP_H
 #define LIBGOMP_H
 
-#define GOMP_STACK_SIZE 1024
+#define GOMP_STACK_SIZE 256
 
 #define GOMP_MAX_NUM_THREADS 8
 #define GOMP_DEFAULT_NUM_THREADS 8
@@ -17,6 +17,6 @@ extern void libgomp_init();
 
 extern int omp_verbose;
 
-#define OMP_VERBOSE_DEFAULT 2
+#define OMP_VERBOSE_DEFAULT 0
 
 #endif // LIBGOMP_H

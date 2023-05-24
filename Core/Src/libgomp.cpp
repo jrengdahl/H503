@@ -26,7 +26,7 @@
 // The threads' stacks
 // The thread number can be determined by looking at certain bits of the sp.
 
-static char gomp_stacks[GOMP_MAX_NUM_THREADS][GOMP_STACK_SIZE] __ALIGNED(GOMP_STACK_SIZE);
+static char gomp_stacks[GOMP_MAX_NUM_THREADS][GOMP_STACK_SIZE] __ALIGNED(GOMP_MAX_NUM_THREADS*GOMP_STACK_SIZE);
 
 
 

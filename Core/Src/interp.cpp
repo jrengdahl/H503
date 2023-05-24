@@ -480,6 +480,37 @@ uint32_t interp()
                 }
             }
 
+//              //                              //
+        HELP(  "omp <num>                       run an OMP test")
+        else if(buf[0]=='o' && buf[1]=='m' && buf[2]=='p')
+            {
+            extern void omp_hello();
+
+
+            int test = 0;
+
+            if(isdigit(*p))
+                {
+                test = getdec(&p);                              // get the count
+                }
+
+            switch(test)
+                {
+            case 0: omp_hello();        break;
+                }
+            }
+
+//              //                              //
+        HELP(  "v <num>                         set verbosity level")
+        else if(buf[0]=='v' && buf[1]==' ')
+            {
+            extern int omp_verbose;
+
+            if(isdigit(*p))
+                {
+                omp_verbose = getdec(&p);                              // get the count
+                }
+            }
 
 
         else if(buf[0]=='?')

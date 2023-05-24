@@ -36,6 +36,9 @@
 
 static int vcp_init_complete = 0;
 
+static uint8_t *xmit_Buf2 = 0;
+static uint16_t xmit_Len2 = 0;
+
 /* USER CODE END PV */
 
 /** @addtogroup STM32_USB_OTG_DEVICE_LIBRARY
@@ -290,7 +293,7 @@ static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
   * @param  Len: Number of data to be sent (in bytes)
   * @retval USBD_OK if all operations are OK else USBD_FAIL or USBD_BUSY
   */
-uint8_t CDC_Transmit_FS(uint8_t* Buf, uint16_t Len)
+uint8_t CDC_Transmit_FS(uint8_t* Buf1, uint16_t Len1, uint8_t* Buf2, uint16_t Len2)
 {
   uint8_t result = USBD_OK;
   /* USER CODE BEGIN 7 */
@@ -299,7 +302,10 @@ uint8_t CDC_Transmit_FS(uint8_t* Buf, uint16_t Len)
       return USBD_BUSY;
       }
 
-  USBD_CDC_SetTxBuffer(&hUsbDeviceFS, Buf, Len);
+  xmit_Buf2 = Buf2;
+  xmit_Len2 = Len2;
+
+  USBD_CDC_SetTxBuffer(&hUsbDeviceFS, Buf1, Len1);
   result = USBD_CDC_TransmitPacket(&hUsbDeviceFS);
   /* USER CODE END 7 */
   return result;
@@ -325,7 +331,17 @@ static int8_t CDC_TransmitCplt_FS(uint8_t *Buf, uint32_t *Len, uint8_t epnum)
   UNUSED(Len);
   UNUSED(epnum);
 
-  vcp_tx_callback();
+  if(xmit_Buf2)
+      {
+      USBD_CDC_SetTxBuffer(&hUsbDeviceFS, xmit_Buf2, xmit_Len2);
+      USBD_CDC_TransmitPacket(&hUsbDeviceFS);
+      xmit_Buf2 = 0;
+      xmit_Len2 = 0;
+      }
+  else
+      {
+      vcp_tx_callback();
+      }
 
   /* USER CODE END 13 */
   return result;
