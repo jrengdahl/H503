@@ -13,8 +13,8 @@
 
 
 
-#ifndef THREADFIFO_HPP
-#define THREADFIFO_HPP
+#ifndef CONTEXTFIFO_HPP
+#define CONTEXTFIFO_HPP
 
 #include <context.hpp>
 #include "cmsis.h"
@@ -26,7 +26,7 @@ class ThreadFIFO : public FIFO<Context, THREAD_FIFO_DEPTH>
     {
     public:
 
-    bool suspend();
+    void suspend();
     void suspend_switch();
     bool resume();
     void resume_switch();
@@ -55,5 +55,5 @@ static inline void undefer()
     }
 
 
-#endif // THREADFIFO_HPP
+#endif // CONTEXTFIFO_HPP
 

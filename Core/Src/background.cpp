@@ -6,10 +6,11 @@
 // BSD license -- see the accompanying LICENSE file
 
 
-#include <context.hpp>
-#include <ContextFIFO.hpp>
 #include <stdint.h>
 #include <stdio.h>
+#include "context.hpp"
+#include "Port.hpp"
+#include "ContextFIFO.hpp"
 #include "serial.h"
 #include "main.h"
 #include "usbd_cdc_if.h"
@@ -25,11 +26,12 @@
 
 ThreadFIFO DeferFIFO;
 
-extern Context txPort;                              // ports for use by the console (serial or USB VCP)
-extern Context rxPort;
+extern Port txPort;                              // ports for use by the console (serial or USB VCP)
+extern Port rxPort;
 
 extern uint32_t interp();                           // the command line interpreter thread
 char InterpStack[2048];                             // the stack for the interpreter thread
+Context InterpCtx;
 
 uint32_t LastTimeStamp = 0;
 
@@ -61,7 +63,7 @@ void background()                                       // powerup init and back
 
     libgomp_init();
 
-    Context::spawn(interp, InterpStack);                // spawn the command line interpreter on core 0
+    InterpCtx.spawn(interp, InterpStack);                // spawn the command line interpreter on core 0
 
     ////////////////////
     // background loop

@@ -53,10 +53,25 @@
 // and debug than a huge single-threaded state machine.
 
 
-#ifndef THREAD_H
-#define THREAD_H
+#ifndef CONTEXT_H
+#define CONTEXT_H
 
 #include <stdint.h>
+#include "cmsis.h"
+
+#define STORE_CONTEXT                           \
+"   mrs     ip, primask                 \n"     \
+"   cpsid   i                           \n"     \
+"   stm     r9, {r4-r8, r10-ip, lr}     \n"     \
+"   str     sp, [r9, #36]               \n"
+
+#define LOAD_CONTEXT                            \
+"   ldm     r9, {r4-r8, r10-ip, lr}     \n"     \
+"   ldr     sp, [r9, #36]               \n"     \
+"   msr     primask, ip                 \n"
+
+
+
 
 // the code of a thread
 typedef uint32_t THREADFN();
@@ -66,57 +81,44 @@ class Context
     {
     private:
 
-    uint32_t r3;        // holds the sp, which can't be accessed by the ldm/stm instructions
     uint32_t r4;
     uint32_t r5;
     uint32_t r6;
     uint32_t r7;
     uint32_t r8;
-                        // skip over r9 which holds the pending stack pointer
+                        // skip over r9 which holds the current thread pointer
     uint32_t r10;
     uint32_t r11;
     uint32_t ip;        // holds the interrupt state
     uint32_t lr;        // holds the execution address
 
-    // r9 is reserved for the thread stack pointer
+    uint32_t sp;        // sp, which can't be accessed by the ldm/stm instructions
+
+    Context *next;      // contextchain pointer
+
 
     public:
 
     // Constructor
-    Context() : r3(0), r4(0), r5(0), r6(0), r7(0), r8(0), r10(0), r11(0), ip(0), lr(0)
+    Context() : r4(0), r5(0), r6(0), r7(0), r8(0), r10(0), r11(0), ip(0), lr(0), sp(0), next(0)
         {
         }
 
-    void clear()
-        {
-        r3 = 0;
-        r4 = 0;
-        r5 = 0;
-        r6 = 0;
-        r7 = 0;
-        r8 = 0;
-        r10 = 0;
-        r11 = 0;
-        ip = 0;
-        lr = 0;
-        }
+    void static suspend();                  // suspend self until resumed
+    void static suspend_switch();           // an entry point to resume after the condition is tested (for Ozone RTOS awareness)
 
+    void resume();                          // resume a suspended thread
+    void resume_switch();                   // an entry point to resume after the condition is tested (for Ozone RTOS awareness)
 
-    void suspend();                                             // suspend self until resumed
-    void suspend_switch();                                      // an entry point to resume after the condition is tested (for Ozone RTOS awareness)
-
-    bool resume();                                              // resume a suspended thread
-    void resume_switch();                                       // an entry point to resume after the condition is tested (for Ozone RTOS awareness)
-
-    static void start(THREADFN *fn, char *sp);                  // an internal function to start a new thread
-    static void start_switch1();                                // an entry point to resume after the condition is tested (for Ozone RTOS awareness)
-    static void start_switch2();                                // an entry point to resume after the condition is tested (for Ozone RTOS awareness)
+    void start(THREADFN *fn, char *sp);     // an internal function to start a new thread
+    void start_switch1();                   // an entry point to resume after the condition is tested (for Ozone RTOS awareness)
+    void start_switch2();                   // an entry point to resume after the condition is tested (for Ozone RTOS awareness)
 
 
     // spawn a new thread
     template<unsigned N>
-    static void spawn(THREADFN *fn,         // code
-                      char (&stack)[N])     // reference to the stack. The template can determine the stack size from the reference.
+    __FORCEINLINE void spawn(THREADFN *fn,  // code
+               char (&stack)[N])            // reference to the stack. The template can determine the stack size from the reference.
         {
         start(fn, &stack[N-8]);             // reserve two words at stack top, then call the start function, passing the initial sp
         }
@@ -138,4 +140,4 @@ class Context
 
 
 
-#endif // THREAD_H
+#endif // CONTEXT_H

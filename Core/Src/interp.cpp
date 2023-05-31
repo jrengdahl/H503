@@ -51,23 +51,24 @@ void commas(uint32_t x)
 char buf[INBUFLEN];
 
 // a simple thread used to benchmark the thread switching calls
+Context TestCtx;
 char TestStack[1024];
-Context TestPort;
 unsigned TestCount = 0;
+
 uint32_t TestThread()
     {
     while(TestCount--)
         {
-        TestPort.suspend();
-        TestPort.suspend();
-        TestPort.suspend();
-        TestPort.suspend();
-        TestPort.suspend();
-        TestPort.suspend();
-        TestPort.suspend();
-        TestPort.suspend();
-        TestPort.suspend();
-        TestPort.suspend();
+        Context::suspend();
+        Context::suspend();
+        Context::suspend();
+        Context::suspend();
+        Context::suspend();
+        Context::suspend();
+        Context::suspend();
+        Context::suspend();
+        Context::suspend();
+        Context::suspend();
         }
     return 0;
     }
@@ -420,21 +421,21 @@ uint32_t interp()
 
             count = getdec(&p);
             TestCount = count;
-            Context::spawn(TestThread, TestStack);
+            TestCtx.spawn(TestThread, TestStack);
             Elapsed();
 
             while(!Context::done(TestStack))
                     {
-                    TestPort.resume();
-                    TestPort.resume();
-                    TestPort.resume();
-                    TestPort.resume();
-                    TestPort.resume();
-                    TestPort.resume();
-                    TestPort.resume();
-                    TestPort.resume();
-                    TestPort.resume();
-                    TestPort.resume();
+                    TestCtx.resume();
+                    TestCtx.resume();
+                    TestCtx.resume();
+                    TestCtx.resume();
+                    TestCtx.resume();
+                    TestCtx.resume();
+                    TestCtx.resume();
+                    TestCtx.resume();
+                    TestCtx.resume();
+                    TestCtx.resume();
                     }
 
             ticks = Elapsed();

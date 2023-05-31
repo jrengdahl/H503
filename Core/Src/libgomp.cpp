@@ -152,7 +152,7 @@ void libgomp_init()
 
     for(int i=0; i<GOMP_MAX_NUM_THREADS; i++)       // start all the omp_threads
         {
-        Context::spawn(gomp_worker, gomp_stacks[i]);         
+        omp_threads[i].context.spawn(gomp_worker, gomp_stacks[i]);
         }
     }
 

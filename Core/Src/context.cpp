@@ -17,51 +17,9 @@
 #include <stdint.h>
 #include "cmsis.h"
 
-// Define the maximum depth of the thread stack -- how deep can "resume" calls be nested.
-const unsigned THREAD_DEPTH = 8;
 
-// This is the pending thread stack.
-static Context thread_stack[THREAD_DEPTH];
+Context BackgroundContext;
 
-// Push the current thread onto the pending stack, and
-// resume a thread saved in a Thread object.
-__NOINLINE
-__NAKED
-bool Context::resume()
-    {
-    __asm__ __volatile__(
-"   mrs     ip, primask                 \n"         // save interrupt state
-"   cpsid   i                           \n"         // disable interrupts
-"   ldr     r2, [r0]                    \n"         // look at the sp in the new thread
-"   mov     r3, #0                      \n"         // zero the sp in the Thread buffer
-"   cbz     r2, 0f                      \n"         // go return false if sp is zero
-"   str     r3, [r0], #4                \n"         // and increment r0
-"   stmdb   r9!, {r4-r8, r10-ip, lr}    \n"         // push all the non-volatile registers of the current thread onto the thread stack
-"   str     sp, [r9, #-4]!              \n"         // save the SP into the Thread
-    );
-
-    this->resume_switch();
-
-    __asm__ __volatile__(
-"0: mov     r0, #0                      \n"         // return false
-"   msr     primask, ip                 \n"         // restore previous interrupt state
-"   bx      lr                          \n"         //
-    );
-
-    return false;                                   // dummy return to keep the compiler happy
-    }
-
-__NOINLINE
-__NAKED
-void Context::resume_switch()
-    {
-    __asm__ __volatile__(
-"   mov     sp, r2                      \n"         // load sp of new thread
-"   ldmia   r0,  {r4-r8, r10-ip, lr}    \n"         // load the rest of the non-volatile registers of the new thread
-"   msr     primask, ip                 \n"         // restore the new thread's interrupt state
-"   bx      lr                          \n"         // return to the new thread
-    );
-    }
 
 // Suspend the current thread into a Thread object,
 // pop the next thread from the pending stack into the
@@ -71,13 +29,12 @@ __NAKED
 void Context::suspend()
     {
     __asm__ __volatile__(
-"   mrs     ip, primask                 \n"         // save interrupt state
-"   cpsid   i                           \n"         // disable interrupts
-"   str     sp, [r0], #4                \n"         // save the old sp into the suspended Thread
-"   stm     r0, {r4-r8, r10-ip, lr}     \n"         // save the non-volatile registers of the current thread into the Thread instance
+    STORE_CONTEXT
+"   mov     r3, r9                      \n"         // unlink current context from the ready chain
+"   ldr     r9, [r3, #40]               \n"
     );
 
-    this->suspend_switch();
+    suspend_switch();
     }
 
 __NOINLINE
@@ -85,11 +42,35 @@ __NAKED
 void Context::suspend_switch()
     {
     __asm__ __volatile__(
-"   ldr     sp, [r9], #4                \n"         // pop the new sp from the pending Thread
-"   ldmia   r9!, {r4-r8, r10-ip, lr}    \n"         // pop the non-volatile registers of the most recently active thread on the pending stack
-"   msr     primask, ip                 \n"         // restore the new thread's interrupt state
-"   bx      lr                          \n"         // r0 will be non-zero on return to indicate that the corresponding resume succeeded
+    LOAD_CONTEXT
+"   bx      lr                          \n"
     );                                              // return to the un-pending thread right after its call to resume
+    }
+
+
+// Push the current thread onto the pending chain, and
+// resume the first thread in a chain
+__NOINLINE
+__NAKED
+void Context::resume()
+    {
+    __asm__ __volatile__(
+    STORE_CONTEXT
+"   str     r9, [r0, #40]               \n"
+"   mov     r9, r0                      \n"         // link the new context onto the head of the ready chain
+    );
+
+    this->resume_switch();
+    }
+
+__NOINLINE
+__NAKED
+void Context::resume_switch()
+    {
+    __asm__ __volatile__(
+    LOAD_CONTEXT
+"   bx      lr                          \n"
+    );
     }
 
 
@@ -120,10 +101,9 @@ void Context::start(THREADFN *fn, char *newsp)
     (void)newsp;
 
     __asm__ __volatile__(
-"   mrs     ip, primask                 \n"         // save interrupt state
-"   cpsid   i                           \n"         // disable interrupts
-"   mov     r3, sp                      \n"         // save the sp of the calling thread in a register that can be pushed
-"   stmdb   r9!, {r3-r8, r10-ip, lr}    \n"         // push the calling thread onto the pending thread stack
+    STORE_CONTEXT
+"   str     r9, [r0, #40]               \n"
+"   mov     r9, r0                      \n"         // link the new context onto the head of the ready chain
     );
 
     start_switch1();
@@ -134,12 +114,12 @@ __NAKED
 void Context::start_switch1()
     {
     __asm__ __volatile__(
-"   mov     sp, r1                      \n"         // setup the new thread's stack
-"   mov     r1, #0                      \n"         //
-"   str     r1, [sp, #0]                \n"         // clear the return value
-"   str     r1, [sp, #4]                \n"         // and the "done" flag
+"   mov     sp, r2                      \n"         // setup the new thread's stack
+"   mov     r2, #0                      \n"         //
+"   str     r2, [sp, #0]                \n"         // clear the return value
+"   str     r2, [sp, #4]                \n"         // and the "done" flag
 "   msr     primask, ip                 \n"         // restore the new thread's interrupt state
-"   blx     r0                          \n"         // start executing the code of the new thread
+"   blx     r1                          \n"         // start executing the code of the new thread
 
 // when the new thread terminates, it returns here...
 // it is assumed that the sp at this point has its initial value (the thread's stack usage is balanced)
@@ -148,6 +128,9 @@ void Context::start_switch1()
 "   mov     r1, #1                      \n"         //
 "   str     r0, [sp, #0]                \n"         // save the return value
 "   str     r1, [sp, #4]                \n"         // set the "done" flag
+
+"   mov     r3, r9                      \n"         // unlink current context from the ready chain
+"   ldr     r9, [r3, #40]               \n"
     );
 
     start_switch2();
@@ -158,9 +141,7 @@ __NAKED
 void Context::start_switch2()
     {
     __asm__ __volatile__(
-"   ldmia   r9!, {r3-r8, r10-ip, lr}    \n"         // pop the next thread from the pending thread stack, and return to it
-"   mov     sp, r3                      \n"
-"   msr     primask, ip                 \n"         // restore the new thread's interrupt state
+    LOAD_CONTEXT
 "   bx      lr                          \n"
     );
     }
@@ -170,15 +151,10 @@ void Context::start_switch2()
 // At present, this consists only of setting the pending thread stack pointer
 void Context::init()
     {
-    for(auto &x : thread_stack)
-        {
-        x.clear();
-        }
-
     __asm__ __volatile__(
-"   mov r9, %[tsp]"                                     // init the thread stack pointer
+"   mov r9, %[bgctx]"                                     // init the thread stack pointer
     :
-    : [tsp]"r"(&thread_stack[THREAD_DEPTH])
+    : [bgctx]"r"(&BackgroundContext)
     :
     );
     }

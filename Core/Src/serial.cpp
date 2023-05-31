@@ -4,17 +4,18 @@
 // BSD license -- see the accompanying LICENSE file
 
  
-#include <context.hpp>
-#include <ContextFIFO.hpp>
 #include <stdint.h>
+#include "context.hpp"
 #include "Fifo.hpp"
-#include "usbd_cdc_if.h"
+#include "ContextFIFO.hpp"
+#include "Port.hpp"
 #include "CriticalRegion.hpp"
+#include "usbd_cdc_if.h"
 
 extern "C" const char *strnchr(const char *s, int n, int c);
 
-Context txPort;
-Context rxPort;
+Port txPort;
+Port rxPort;
 
 FIFO<char, 64> ConsoleFifo;
 
