@@ -16,6 +16,7 @@
 #include "usbd_cdc_if.h"
 #include "cyccnt.hpp"
 #include "libgomp.hpp"
+#include "boundaries.h"
 
 // The DeferFIFO used by yield, for rudimentary time-slicing.
 // Note that the only form of "time-slicing" occurs when a thread
@@ -55,6 +56,12 @@ void background()                                       // powerup init and back
     ///////////////////////////
     // powerup initialization
     ///////////////////////////
+
+    for(uint32_t *p = &_stack_start; p<&_stack_end; p++)*p = 0;
+
+    __asm__ __volatile__(
+"   ldr sp, =_stack_end"
+    );
 
     Context::init();                                    // init the bare metal threading system
     InitCyccnt();                                       // enable the cycle counter

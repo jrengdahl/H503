@@ -18,14 +18,18 @@
 #include "cyccnt.hpp"
 #include "main.h"
 #include "boundaries.h"
+#include "libgomp.hpp"
 #include "omp.h"
 
 extern void bear();
 extern "C" char *strchrnul(const char *s, int c);   // POSIX function but not included in newlib, see https://linux.die.net/man/3/strchr
 extern void summary(unsigned char *, unsigned, unsigned, int);
-void RamTest(uint8_t *addr, unsigned size, unsigned repeat, unsigned limit);
+extern void RamTest(uint8_t *addr, unsigned size, unsigned repeat, unsigned limit);
 extern "C" void SystemClock_PLL_Config(unsigned);
 extern "C" void SystemClock_HSI_Config(void);
+extern char InterpStack[2048];
+extern char gomp_stacks[GOMP_MAX_NUM_THREADS][GOMP_STACK_SIZE];
+
 
 // print a large number with commas
 void commas(uint32_t x)
@@ -52,7 +56,7 @@ char buf[INBUFLEN];
 
 // a simple thread used to benchmark the thread switching calls
 Context TestCtx;
-char TestStack[1024];
+char TestStack[512];
 unsigned TestCount = 0;
 
 uint32_t TestThread()
@@ -513,6 +517,25 @@ uint32_t interp()
                 }
             }
 
+//              //                              //
+        HELP(  "stk                             dump stacks")
+        else if(buf[0]=='s' && buf[1]=='t' && buf[2]=='k')
+            {
+            printf("background stack:\n");
+            dump(&_stack_start, (char *)&_stack_end - (char *)&_stack_start);
+
+            printf("\ninterp stack:\n");
+            dump(&InterpStack, sizeof(InterpStack));
+
+            printf("\nTestStack:\n");
+            dump(&TestStack, sizeof(TestStack));
+
+            for(int i=0; i<GOMP_MAX_NUM_THREADS; i++)
+                {
+                printf("\nomp stack %d:\n", i);
+                dump(&gomp_stacks[i], GOMP_STACK_SIZE);
+                }
+            }
 
         else if(buf[0]=='?')
             {

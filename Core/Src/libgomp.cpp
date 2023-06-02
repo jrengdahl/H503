@@ -26,7 +26,7 @@
 // The threads' stacks
 // The thread number can be determined by looking at certain bits of the sp.
 
-static char gomp_stacks[GOMP_MAX_NUM_THREADS][GOMP_STACK_SIZE] __ALIGNED(GOMP_MAX_NUM_THREADS*GOMP_STACK_SIZE);
+char gomp_stacks[GOMP_MAX_NUM_THREADS][GOMP_STACK_SIZE] __ALIGNED(GOMP_STACK_SIZE);
 
 
 
@@ -152,6 +152,7 @@ void libgomp_init()
 
     for(int i=0; i<GOMP_MAX_NUM_THREADS; i++)       // start all the omp_threads
         {
+        omp_threads[i].id = i;
         omp_threads[i].context.spawn(gomp_worker, gomp_stacks[i]);
         }
     }
@@ -604,19 +605,11 @@ int omp_get_num_threads()
 extern "C"
 int omp_get_thread_num()
     {
-    uintptr_t sp;
-    uintptr_t base = (uintptr_t)&gomp_stacks;
+    omp_thread *thrd;
 
-    __asm__ __volatile__("    mov %[sp], sp" : [sp]"=r"(sp));
+    __asm__ __volatile__("    mov %[thrd], r9" : [thrd]"=r"(thrd));
 
-    if(sp < base || sp > (uintptr_t)&gomp_stacks[GOMP_MAX_NUM_THREADS])
-        {
-        return 0;
-        }
-    else
-        {
-        return (sp-base)/GOMP_STACK_SIZE;
-        }
+    return thrd->id;
     }
 
 

@@ -10,10 +10,11 @@
 #include <stdarg.h>
 #include <unistd.h>
 #include "local.h"
-
+#include "mutex.hpp"
 
 extern "C" int _write(int file, const char *ptr, int len);
 
+static mutex PrintfMutex;
 
 char printbuf[MAXPRINTF];                                   // a single printf buffer shared by all threads
 
@@ -33,9 +34,13 @@ int printf(const char *fmt, ...)
 extern "C"
 int vprintf(const char *fmt, va_list args)
     {
+    PrintfMutex.lock();
+
     int len = vsnprintf(printbuf, MAXPRINTF, fmt, args);        // format the message into the shared buffer
 
     _write(1, printbuf, len);
+
+    PrintfMutex.unlock();
 
     return len;
     }
@@ -47,8 +52,10 @@ int puts(const char *str)
     {
     unsigned len = strlen(str);
 
+    PrintfMutex.lock();
     _write(1, str, len);
     _write(1, "\n", 1);
+    PrintfMutex.unlock();
 
     return len;
     }
