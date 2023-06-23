@@ -30,8 +30,8 @@ ThreadFIFO DeferFIFO;
 extern Port txPort;                              // ports for use by the console (serial or USB VCP)
 extern Port rxPort;
 
-extern uint32_t interp();                           // the command line interpreter thread
-char InterpStack[2048];                             // the stack for the interpreter thread
+extern uint32_t interp(uintptr_t);               // the command line interpreter thread
+char InterpStack[2048];                          // the stack for the interpreter thread
 Context InterpCtx;
 
 uint32_t LastTimeStamp = 0;
@@ -57,8 +57,13 @@ void background()                                       // powerup init and back
     // powerup initialization
     ///////////////////////////
 
+    // at powerup the stack pointer points to the end of RAM
+    // the first thing that must be done is to switch to the stack defined by the linker script
+
+    // clear the background stack
     for(uint32_t *p = &_stack_start; p<&_stack_end; p++)*p = 0;
 
+    // switch to the background stack
     __asm__ __volatile__(
 "   ldr sp, =_stack_end"
     );
@@ -68,9 +73,9 @@ void background()                                       // powerup init and back
 
     CPACR |= CPACR_VFPEN;                               // enable the floating point coprocessor
 
-    libgomp_init();
+    libgomp_init();                                     // init the OpenMP threading system
 
-    InterpCtx.spawn(interp, InterpStack);                // spawn the command line interpreter on core 0
+    InterpCtx.spawn(interp, InterpStack);               // spawn the command line interpreter on core 0
 
     ////////////////////
     // background loop

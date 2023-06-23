@@ -74,7 +74,7 @@
 
 
 // the code of a thread
-typedef uint32_t THREADFN();
+typedef uint32_t THREADFN(uintptr_t arg);
 
 // the context of a thread
 class Context
@@ -110,7 +110,7 @@ class Context
     void resume();                          // resume a suspended thread
     void resume_switch();                   // an entry point to resume after the condition is tested (for Ozone RTOS awareness)
 
-    void start(THREADFN *fn, char *sp);     // an internal function to start a new thread
+    void start(THREADFN *fn, char *sp, uintptr_t arg); // an internal function to start a new thread
     void start_switch1();                   // an entry point to resume after the condition is tested (for Ozone RTOS awareness)
     void start_switch2();                   // an entry point to resume after the condition is tested (for Ozone RTOS awareness)
 
@@ -118,9 +118,10 @@ class Context
     // spawn a new thread
     template<unsigned N>
     __FORCEINLINE void spawn(THREADFN *fn,  // code
-               char (&stack)[N])            // reference to the stack. The template can determine the stack size from the reference.
+               char (&stack)[N],            // reference to the stack. The template can determine the stack size from the reference.
+               uintptr_t arg = 0)
         {
-        start(fn, &stack[N-8]);             // reserve two words at stack top, then call the start function, passing the initial sp
+        start(fn, &stack[N-8], arg);        // reserve two words at stack top, then call the start function, passing the initial sp
         }
 
     static void init();                     // powerup init of the thread system (inits the thread stack pointer in r9)

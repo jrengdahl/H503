@@ -95,10 +95,11 @@ void Context::resume_switch()
 
 __NOINLINE
 __NAKED
-void Context::start(THREADFN *fn, char *newsp)
+void Context::start(THREADFN *fn, char *newsp, uintptr_t arg)
     {
     (void)fn;
     (void)newsp;
+    (void)arg;
 
     __asm__ __volatile__(
     STORE_CONTEXT
@@ -118,6 +119,7 @@ void Context::start_switch1()
 "   mov     r2, #0                      \n"         //
 "   str     r2, [sp, #0]                \n"         // clear the return value
 "   str     r2, [sp, #4]                \n"         // and the "done" flag
+"   mov     r0, r3                      \n"         // pass the arg in r0
 "   msr     primask, ip                 \n"         // restore the new thread's interrupt state
 "   blx     r1                          \n"         // start executing the code of the new thread
 

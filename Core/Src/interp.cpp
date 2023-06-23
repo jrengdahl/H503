@@ -28,7 +28,7 @@ extern void RamTest(uint8_t *addr, unsigned size, unsigned repeat, unsigned limi
 extern "C" void SystemClock_PLL_Config(unsigned);
 extern "C" void SystemClock_HSI_Config(void);
 extern char InterpStack[2048];
-extern char gomp_stacks[GOMP_MAX_NUM_THREADS][GOMP_STACK_SIZE];
+extern omp_thread omp_threads[GOMP_MAX_NUM_THREADS];
 
 
 // print a large number with commas
@@ -59,8 +59,10 @@ Context TestCtx;
 char TestStack[512];
 unsigned TestCount = 0;
 
-uint32_t TestThread()
+uint32_t TestThread(uintptr_t arg)
     {
+    (void)arg;
+
     while(TestCount--)
         {
         Context::suspend();
@@ -78,8 +80,10 @@ uint32_t TestThread()
     }
 
 
-uint32_t interp()
+uint32_t interp(uintptr_t arg)
     {
+    (void)arg;
+
     bear();
     printf("hello, world!\n");
 
@@ -489,7 +493,7 @@ uint32_t interp()
         HELP(  "omp <num>                       run an OMP test")
         else if(buf[0]=='o' && buf[1]=='m' && buf[2]=='p')
             {
-            extern void omp_hello();
+            extern void omp_hello(int);
 
 
             int test = 0;
@@ -497,11 +501,12 @@ uint32_t interp()
             if(isdigit(*p))
                 {
                 test = getdec(&p);                              // get the count
+                skip(&p);
                 }
 
             switch(test)
                 {
-            case 0: omp_hello();        break;
+            case 0: omp_hello(getdec(&p));      break;
                 }
             }
 
@@ -521,9 +526,6 @@ uint32_t interp()
         HELP(  "stk                             dump stacks")
         else if(buf[0]=='s' && buf[1]=='t' && buf[2]=='k')
             {
-            printf("background stack:\n");
-            dump(&_stack_start, (char *)&_stack_end - (char *)&_stack_start);
-
             printf("\ninterp stack:\n");
             dump(&InterpStack, sizeof(InterpStack));
 
@@ -532,8 +534,8 @@ uint32_t interp()
 
             for(int i=0; i<GOMP_MAX_NUM_THREADS; i++)
                 {
-                printf("\nomp stack %d:\n", i);
-                dump(&gomp_stacks[i], GOMP_STACK_SIZE);
+                printf("\nomp thread %d stack:\n", i);
+                dump(omp_threads[i].stack_low, omp_threads[i].stack_high - omp_threads[i].stack_low);
                 }
             }
 
