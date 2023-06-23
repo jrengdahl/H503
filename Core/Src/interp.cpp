@@ -494,6 +494,7 @@ uint32_t interp(uintptr_t arg)
         else if(buf[0]=='o' && buf[1]=='m' && buf[2]=='p')
             {
             extern void omp_hello(int);
+            extern void omp_for(int);
 
 
             int test = 0;
@@ -507,6 +508,7 @@ uint32_t interp(uintptr_t arg)
             switch(test)
                 {
             case 0: omp_hello(getdec(&p));      break;
+            case 1: omp_for(getdec(&p));      break;
                 }
             }
 
