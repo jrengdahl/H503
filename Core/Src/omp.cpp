@@ -18,3 +18,16 @@ void omp_for(int arg)
         }
     printf("\n");
     }
+
+void omp_single(int arg)
+    {
+    if(arg==0)arg=4;
+    #pragma omp parallel num_threads(arg)
+        {
+        int id = omp_get_thread_num();
+        #pragma omp single
+        printf("s%d ", id);
+        printf("%d ", id);
+        }
+    printf("\n");
+    }

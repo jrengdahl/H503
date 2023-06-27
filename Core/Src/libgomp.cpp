@@ -229,32 +229,38 @@ void GOMP_parallel(
 extern "C"
 void GOMP_barrier()
     {
-    int id = omp_get_thread_num();              // the id if this context
-    int num = omp_get_num_threads();            // the number of threads in the current team
+    omp_thread &thread = *omp_this_thread();
+    omp_thread &team = *omp_this_team();
 
-    omp_threads[id].arrived = true;             // signal that this thread has reached the barrier
+    thread.arrived = true;                      // signal that this thread has reached the barrier
 
-    for(int i=0; i<num; i++)                    // see if any other threads in the team have not yet reached the barrier
+    if(team.arrived == false)
+        {                                       // get here if any team member has not yet arrived
+        thread.context.suspend();               // suspend this thread until all other threads have arrived
+        return;                                 // when resumed, some other thread has done all the barrier cleanup work, so just keep going
+        }
+
+    for(omp_thread *member = team.members; member != 0; member = member->next)
         {
-        if(omp_threads[i].arrived == false)
+        if(member->arrived == false)
             {                                   // get here if any team member has not yet arrived
-            omp_threads[id].context.suspend();  // suspend this thread until all other threads have arrived
+            member->context.suspend();          // suspend this thread until all other threads have arrived
             return;                             // when resumed, some other thread has done all the barrier cleanup work, so just keep going
             }
         }
 
     // get here if all threads in the team have arrived at the barrier
+    // since this thread is the last one to arrive, all others are suspended waiting for it
+    // clear the "arrived" flags and resume all suspended threads
 
-    for(int i=0; i<num; i++)                    // clear the arrived flag for all team members
+    team.arrived = false;
+    if(&team != &thread)team.context.resume();  // if I am not the master resume the master
+    for(omp_thread *member = team.members; member != 0; member = member->next)
         {
-        omp_threads[i].arrived = false;         // clear the arrived-at-barrier flag
-        }
-
-    for(int i=0; i<num; i++)                    // resume all other threads in the team
-        {
-        if(i != id)                             // don't try to resume self
-            {
-            omp_threads[i].context.resume();    // resume the team member
+        member->arrived = false;
+        if(member != &thread)
+            {                                   // get here if any team member has not yet arrived
+            member->context.resume();           // suspend this thread until all other threads have arrived
             }
         }
     }

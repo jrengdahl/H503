@@ -495,6 +495,7 @@ uint32_t interp(uintptr_t arg)
             {
             extern void omp_hello(int);
             extern void omp_for(int);
+            extern void omp_single(int);
 
 
             int test = 0;
@@ -508,7 +509,8 @@ uint32_t interp(uintptr_t arg)
             switch(test)
                 {
             case 0: omp_hello(getdec(&p));      break;
-            case 1: omp_for(getdec(&p));      break;
+            case 1: omp_for(getdec(&p));        break;
+            case 2: omp_single(getdec(&p));     break;
                 }
             }
 
