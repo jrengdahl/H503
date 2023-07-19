@@ -32,7 +32,7 @@ extern Port rxPort;
 
 extern uint32_t interp(uintptr_t);               // the command line interpreter thread
 char InterpStack[2048];                          // the stack for the interpreter thread
-Context InterpCtx;
+omp_thread InterpThread;
 
 uint32_t LastTimeStamp = 0;
 
@@ -75,7 +75,7 @@ void background()                                       // powerup init and back
 
     libgomp_init();                                     // init the OpenMP threading system
 
-    InterpCtx.spawn(interp, InterpStack);               // spawn the command line interpreter on core 0
+    libgomp_start_thread(InterpThread, interp, InterpStack); // spawn the command line interpreter on core 0
 
     ////////////////////
     // background loop

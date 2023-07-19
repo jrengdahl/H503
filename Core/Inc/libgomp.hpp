@@ -4,9 +4,11 @@
 #ifndef LIBGOMP_H
 #define LIBGOMP_H
 
-#define GOMP_STACK_SIZE 512
+#include "context.hpp"
 
-#define GOMP_MAX_NUM_THREADS 8
+#define GOMP_STACK_SIZE 3072
+
+#define GOMP_MAX_NUM_THREADS 6
 #define GOMP_NUM_TEAMS 4
 #define GOMP_NUM_TASKS 16
 
@@ -77,12 +79,21 @@ inline omp_thread *omp_this_thread()
     return thread;
     }
 
+
 extern "C"
 inline omp_thread *omp_this_team()
     {
     omp_thread &thread = *omp_this_thread();
     omp_thread *team = thread.team_id == 0 ? &thread : thread.team;
     return team;
+    }
+
+template<unsigned N>
+void libgomp_start_thread(omp_thread &thread, THREADFN *code, char (&stack)[N], uintptr_t arg = 0)
+    {
+    thread.stack_low = &stack[0];
+    thread.stack_high = &stack[N];
+    thread.context.spawn(code, stack, arg);
     }
 
 

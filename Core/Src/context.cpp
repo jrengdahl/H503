@@ -29,9 +29,9 @@ __NAKED
 void Context::suspend()
     {
     __asm__ __volatile__(
-    STORE_CONTEXT
+    STORE_CONTEXT                                   // save the CPU registers to the current thread struct
 "   mov     r3, r9                      \n"         // unlink current context from the ready chain
-"   ldr     r9, [r3, #40]               \n"
+"   ldr     r9, [r3, #40]               \n"         // point r9 to the "next" pointer of the old thread
     );
 
     suspend_switch();
@@ -42,7 +42,7 @@ __NAKED
 void Context::suspend_switch()
     {
     __asm__ __volatile__(
-    LOAD_CONTEXT
+    LOAD_CONTEXT                                    // load the new thread into the CPU registers
 "   bx      lr                          \n"
     );                                              // return to the un-pending thread right after its call to resume
     }
@@ -56,8 +56,8 @@ void Context::resume()
     {
     __asm__ __volatile__(
     STORE_CONTEXT
-"   str     r9, [r0, #40]               \n"
-"   mov     r9, r0                      \n"         // link the new context onto the head of the ready chain
+"   str     r9, [r0, #40]               \n"         // save r9 to the "next" pointer of the new thread
+"   mov     r9, r0                      \n"         // the new thread becomes the head of the ready chain
     );
 
     this->resume_switch();
@@ -68,7 +68,7 @@ __NAKED
 void Context::resume_switch()
     {
     __asm__ __volatile__(
-    LOAD_CONTEXT
+    LOAD_CONTEXT                                    // load the new thread into the CPU registers
 "   bx      lr                          \n"
     );
     }
@@ -150,7 +150,7 @@ void Context::start_switch2()
 
 
 // init the threading system
-// At present, this consists only of setting the pending thread stack pointer
+// At present, this consists only of pointer the current thread pointer to the background thread's struct
 void Context::init()
     {
     __asm__ __volatile__(

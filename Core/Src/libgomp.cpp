@@ -27,7 +27,7 @@
 // The threads' stacks
 // thread 0 (background) uses the stack defined in the linker script
 
-static char gomp_stacks[GOMP_MAX_NUM_THREADS-1][GOMP_STACK_SIZE] __ALIGNED(GOMP_STACK_SIZE);
+static char gomp_stacks[GOMP_MAX_NUM_THREADS-1][GOMP_STACK_SIZE] __ALIGNED(16);
 
 // An array of tasks.
 static task tasks[GOMP_NUM_TASKS];
@@ -56,41 +56,43 @@ int omp_verbose = OMP_VERBOSE_DEFAULT;
 // either run the implicit task, or try to get one from the pool of ready tasks
 // TODO -- each team probably needs its own private ready task pool
 
-void try_task()
+void run_implicit(task *task)
     {
     omp_thread &thread = *omp_this_thread();
     omp_thread &team = *omp_this_team();
 
-    task *task;
     TASKFN *fn;
     char *data;
 
-    if((task=thread.task) != 0)
-        {
-        DPRINT(2)("start implicit task %8p, id = %3d\n", task, thread.team_id);
-        fn = task->fn;                      // run the assigned implicit task
-        data = task->data;
-        fn(data);
-        DPRINT(2)("end   implicit task %8p, id = %3d\n", task, thread.team_id);
-        task_pool.add(task);                // return the task to the pool
-        team.tasks--;
-        thread.task = 0;                    // forget the completed task
-        }
-    else if(ready_tasks.take(task))         // if there are any explicit tasks waiting for a context
-        {
-        DPRINT(2)("start explicit task %8p, id = %3d\n", task, thread.team_id);
-        fn = task->fn;                      // run the explicit task
-        data = task->data;
-        fn(data);
-        DPRINT(2)("end   explicit task %8p, id = %3d\n", task, thread.team_id);
-        data = data - data[-1];             // undo the arg alignment to recover the address returned from malloc
-        DPRINT(2)("free data %8p\n", data);
-        free(data);                         // free the data
-        task_pool.add(task);                // free the task
-        team.tasks--;
-        }
+    DPRINT(2)("start implicit task %8p, id = %3d\n", task, thread.team_id);
+    fn = task->fn;                      // run the assigned implicit task
+    data = task->data;
+    fn(data);
+    DPRINT(2)("end   implicit task %8p, id = %3d\n", task, thread.team_id);
+    task_pool.add(task);                // return the task to the pool
+    team.tasks--;
+    thread.task = 0;                    // forget the completed task
     }
 
+void run_explicit(task *task)
+    {
+    omp_thread &thread = *omp_this_thread();
+    omp_thread &team = *omp_this_team();
+
+    TASKFN *fn;
+    char *data;
+
+    DPRINT(2)("start explicit task %8p, id = %3d\n", task, thread.team_id);
+    fn = task->fn;                      // run the explicit task
+    data = task->data;
+    fn(data);
+    DPRINT(2)("end   explicit task %8p, id = %3d\n", task, thread.team_id);
+    data = data - data[-1];             // undo the arg alignment to recover the address returned from malloc
+    DPRINT(2)("free data %8p\n", data);
+    free(data);                         // free the data
+    task_pool.add(task);                // free the task
+    team.tasks--;
+    }
 
 
 // this is the code for every member of the thread pool, except the initial thread
@@ -98,9 +100,20 @@ void try_task()
 
 static uint32_t gomp_worker(uintptr_t id)
     {
+    omp_thread &thread = *omp_this_thread();
+    task *task;
+
     while(true)
         {
-        try_task();
+        if((task=thread.task) != 0)
+            {
+            run_implicit(task);
+            }
+        else if(ready_tasks.take(task))         // if there are any explicit tasks waiting for a context
+            {
+            run_explicit(task);
+            }
+
         yield();
         }
 
@@ -129,10 +142,8 @@ void libgomp_init()
             }
         else
             {
-            omp_threads[i].stack_low = gomp_stacks[i-1];
-            omp_threads[i].stack_high = gomp_stacks[i];
             thread_pool.add(&omp_threads[i]);
-            omp_threads[i].context.spawn(gomp_worker, gomp_stacks[i-1], i);
+            libgomp_start_thread(omp_threads[i], gomp_worker, gomp_stacks[i-1], i);
             }
         }
     }
@@ -208,7 +219,7 @@ void GOMP_parallel(
         }
 
     // since the master is also a member of this team, execute my task
-    try_task();
+    run_implicit(team.task);
 
     // now that my task is done, wait for each of the other team members and any explicit tasks to complete
     while(team.tasks)
@@ -294,7 +305,7 @@ void GOMP_critical_end()
     {
     omp_thread &team = *omp_this_team();
     omp_thread *thread = &team;
-    omp_thread *next = team.members;
+    omp_thread **pnext = &team.members;
 
     team.mutex = false;
 
@@ -307,8 +318,8 @@ void GOMP_critical_end()
             }
         else
             {
-            thread = next;
-            next = thread->next;
+            thread = *pnext;
+            pnext = &thread->next;
             }
         }
     }
@@ -588,7 +599,10 @@ void GOMP_task (    void (*fn) (void *),
         {
         char *argmem = (char *)malloc(arg_size + arg_align);                                    // allocate memory for data
         DPRINT(2)("malloc data %8p, id = %3d\n", argmem, thread.id);
-        if(argmem == 0)printf("malloc returned 0\n");
+        if(argmem == 0)
+            {
+            printf("malloc returned 0\n");
+            }
         char *arg = (char *)((uintptr_t)(argmem + arg_align) & ~(uintptr_t)(arg_align - 1));    // align the data memory
         arg[-1] = arg-argmem;                                                                   // save the alignment offset at arg-1 so we can calc the addr for free later
 
@@ -604,7 +618,11 @@ void GOMP_task (    void (*fn) (void *),
         task *task = 0;
 
         bool ok = task_pool.take(task);        // create a new task
-        if(!ok)printf("task_pool.take failed\n");
+        if(!ok)
+            {
+            printf("task_pool.take failed\n");
+            return;
+            }
         team.tasks++;
 
         task->fn = fn;                          // give it code
