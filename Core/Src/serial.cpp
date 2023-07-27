@@ -90,6 +90,14 @@ int _write(int file, const char *ptr, int len)
 
 
 extern "C"
+int _writenl(int file, const char *ptr, int len)
+    {
+    vcp_writeblock((uint8_t *)ptr, len, (uint8_t *)"\r\n", 2);
+    return len;
+    }
+
+
+extern "C"
 void vcp_tx_callback()
     {
     txPort.resume();

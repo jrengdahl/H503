@@ -25,14 +25,13 @@
 // level until it calls yield, so in some cases, that thread may call
 // yield shortly after the call to suspend.
 
-ThreadFIFO DeferFIFO;
+ContextFIFO DeferFIFO;
 
 extern Port txPort;                              // ports for use by the console (serial or USB VCP)
 extern Port rxPort;
 
 extern uint32_t interp(uintptr_t);               // the command line interpreter thread
-char InterpStack[2048];                          // the stack for the interpreter thread
-omp_thread InterpThread;
+char InterpStack[3072];                          // the stack for the interpreter thread
 
 uint32_t LastTimeStamp = 0;
 
@@ -68,14 +67,13 @@ void background()                                       // powerup init and back
 "   ldr sp, =_stack_end"
     );
 
-    Context::init();                                    // init the bare metal threading system
     InitCyccnt();                                       // enable the cycle counter
 
     CPACR |= CPACR_VFPEN;                               // enable the floating point coprocessor
 
-    libgomp_init();                                     // init the OpenMP threading system
+    libgomp_init();                                     // init the OpenMP threading system, including setting background as thread 0
 
-    libgomp_start_thread(InterpThread, interp, InterpStack); // spawn the command line interpreter on core 0
+    libgomp_start_thread(omp_threads[1], interp, InterpStack); // spawn the command line interpreter on core 0
 
     ////////////////////
     // background loop

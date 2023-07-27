@@ -22,7 +22,7 @@
 
 static const unsigned THREAD_FIFO_DEPTH = 15;    // must be a power of 2, minus 1, if this is changed, the inline ASM must be updated
 
-class ThreadFIFO : public FIFO<Context, THREAD_FIFO_DEPTH>
+class ContextFIFO : public FIFO<Context *, THREAD_FIFO_DEPTH>
     {
     public:
 
@@ -33,7 +33,7 @@ class ThreadFIFO : public FIFO<Context, THREAD_FIFO_DEPTH>
     };
 
 
-extern ThreadFIFO DeferFIFO;
+extern ContextFIFO DeferFIFO;
 
 
 // suspend the current thread at the DeferFIFO.

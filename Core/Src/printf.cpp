@@ -12,7 +12,8 @@
 #include "local.h"
 #include "mutex.hpp"
 
-extern "C" int _write(int file, const char *ptr, int len);
+extern "C" int _write  (int file, const char *ptr, int len);
+extern "C" int _writenl(int file, const char *ptr, int len);
 
 static mutex PrintfMutex;
 
@@ -53,8 +54,7 @@ int puts(const char *str)
     unsigned len = strlen(str);
 
     PrintfMutex.lock();
-    _write(1, str, len);
-    _write(1, "\n", 1);
+    _writenl(1, str, len);
     PrintfMutex.unlock();
 
     return len;

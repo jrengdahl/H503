@@ -41,6 +41,7 @@ struct omp_thread
 
     int id = 0;             // a unique ID for each thread, also the index into the thread table
     int team_id = 0;        // the number of a thread within the team
+    const char *name = 0;   // optional thread name, for debug
 
     struct task *task = 0;  // the thread's implicit task, nonzero if running
 
@@ -68,6 +69,7 @@ struct omp_thread
     char *stack_high;       // high address of the stack pointer
     };
 
+extern omp_thread omp_threads[GOMP_MAX_NUM_THREADS];
 
 extern "C"
 inline omp_thread *omp_this_thread()
@@ -95,6 +97,5 @@ void libgomp_start_thread(omp_thread &thread, THREADFN *code, char (&stack)[N], 
     thread.stack_high = &stack[N];
     thread.context.spawn(code, stack, arg);
     }
-
 
 #endif // LIBGOMP_H

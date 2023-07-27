@@ -18,17 +18,17 @@
 
 __NOINLINE
 __NAKED
-void ThreadFIFO::suspend()
+void ContextFIFO::suspend()
     {
     __asm__ __volatile__(
     STORE_CONTEXT
 
-    "   ldrd    r2, r3, [r0, #0x280]        \n"         // get nextin (r2) and nextout (r3)
+    "   ldrd    r2, r3, [r0, #64]           \n"         // get nextin (r2) and nextout (r3)
     "   add     r1, r2, #1                  \n"         // increment nextin
     "   and     r1, #15                     \n"         // wrap if needed
     "   cmp     r1, r3                      \n"         // if updated nextin == nextout, the FIFO is full
     "   beq     0f                          \n"         // so go return false
-    "   str     r1, [r0, #0x280]            \n"         // update nextin
+    "   str     r1, [r0, #64]               \n"         // update nextin
 
     "   mov     r4, r9                      \n"         // unlink current thread from the ready chain
     "   ldr     r9, [r4, #40]               \n"         //
@@ -46,7 +46,7 @@ void ThreadFIFO::suspend()
 
 __NOINLINE
 __NAKED
-void ThreadFIFO::suspend_switch()
+void ContextFIFO::suspend_switch()
     {
     __asm__ __volatile__(
     LOAD_CONTEXT
@@ -58,17 +58,17 @@ void ThreadFIFO::suspend_switch()
 
 __NOINLINE
 __NAKED
-bool ThreadFIFO::resume()
+bool ContextFIFO::resume()
     {
     __asm__ __volatile__(
     STORE_CONTEXT
 
-    "   ldrd    r2, r3, [r0, #0x280]        \n"         // get nextin (r2) and nextout (r3)
+    "   ldrd    r2, r3, [r0, #64]           \n"         // get nextin (r2) and nextout (r3)
     "   cmp     r2, r3                      \n"         // if equal, the FIFO is empty
     "   beq     0f                          \n"         // so go return false
     "   add     r2, r3, #1                  \n"         // increment nextout
     "   and     r2, #15                     \n"         // wrap if needed
-    "   str     r2, [r0, #0x284]            \n"         // update nextout
+    "   str     r2, [r0, #68]               \n"         // update nextout
 
     "   ldr     r4, [r0, r3, lsl #2]        \n"         // get the next thread from FIFO[nextout]
     "   str     r9, [r4, #40]               \n"         // link the new thread as the head of the ready chain
@@ -88,7 +88,7 @@ bool ThreadFIFO::resume()
 
 __NOINLINE
 __NAKED
-void ThreadFIFO::resume_switch()
+void ContextFIFO::resume_switch()
     {
     __asm__ __volatile__(
     LOAD_CONTEXT

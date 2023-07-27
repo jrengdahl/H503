@@ -1,13 +1,13 @@
 #ifndef _MUTEX_H
 #define _MUTEX_H
 
-#include "Port.hpp"
+#include "ContextFIFO.hpp"
 #include "CriticalRegion.hpp"
 
 class mutex
     {
     bool flag;
-    Port mwait;
+    ContextFIFO mwait;
 
     public:
 

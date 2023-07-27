@@ -27,7 +27,7 @@
 // The threads' stacks
 // thread 0 (background) uses the stack defined in the linker script
 
-static char gomp_stacks[GOMP_MAX_NUM_THREADS-1][GOMP_STACK_SIZE] __ALIGNED(16);
+static char gomp_stacks[GOMP_MAX_NUM_THREADS-2][GOMP_STACK_SIZE] __ALIGNED(16);
 
 // An array of tasks.
 static task tasks[GOMP_NUM_TASKS];
@@ -121,6 +121,20 @@ static uint32_t gomp_worker(uintptr_t id)
     }
 
 
+const char *thread_names[] =
+    {
+    "background",
+    "interp",
+    "thread 2",
+    "thread 3",
+    "thread 4",
+    "thread 5",
+    "thread 6",
+    "thread 7",
+    "thread 8",
+    "thread 9"
+    };
+
 
 // Powerup initialization of libgomp.
 // Must be called after thread and threadFIFO are setup.
@@ -132,18 +146,35 @@ void libgomp_init()
 
     // init the omp_threads
     // put all threads except 0 (background) into the idle thread pool and start each one
-    for(int i=0; i<GOMP_MAX_NUM_THREADS; i++)
+    for(unsigned i=0; i<GOMP_MAX_NUM_THREADS; i++)
         {
         omp_threads[i].id = i;
+
+        if(i<NUM_ELEMENTS(thread_names))
+            {
+            omp_threads[i].name = thread_names[i];
+            }
+
         if(i == 0)
             {
+            __asm__ __volatile__(
+            "   mov r9, %[bgctx]"           // init the thread pointer to the background thread
+            :
+            : [bgctx]"r"(&omp_threads[0])
+            :
+            );
+
             omp_threads[i].stack_low = (char *)&_stack_start;
             omp_threads[i].stack_high = (char *)&_stack_end;
             }
+        else if(i == 1)
+            {
+            // interp startup is handled in background.cpp
+            }
         else
             {
+            libgomp_start_thread(omp_threads[i], gomp_worker, gomp_stacks[i-2], i);
             thread_pool.add(&omp_threads[i]);
-            libgomp_start_thread(omp_threads[i], gomp_worker, gomp_stacks[i-1], i);
             }
         }
     }
@@ -158,6 +189,7 @@ void GOMP_parallel(
     unsigned flags __attribute__((__unused__)))     // flags (ignored for now)
     {
     omp_thread &team = *omp_this_thread();
+    omp_thread **pnext;
 
     if(num_threads == 0)
         {
@@ -183,6 +215,7 @@ void GOMP_parallel(
         if(i == 0)
             {
             thread = &team;
+            pnext = &team.members;
             }
         else
             {
@@ -192,8 +225,8 @@ void GOMP_parallel(
                 printf("thread_pool is empty\n");
                 break;
                 }
-            thread->next = team.members;
-            team.members = thread;
+            *pnext = thread;
+            pnext = &thread->next;
             thread->team = &team;
             }
 
@@ -228,11 +261,12 @@ void GOMP_parallel(
         }
 
     // disassemble the team
-    while(team.members)
+    omp_thread *member = team.members;
+    while(member)
         {
-        omp_thread *thread = team.members;
-        team.members = thread->next;
-        thread_pool.add(thread);
+        omp_thread *tmp = member;
+        member = member->next;
+        thread_pool.add(tmp);
         }
     }
 
@@ -242,37 +276,41 @@ void GOMP_barrier()
     {
     omp_thread &thread = *omp_this_thread();
     omp_thread &team = *omp_this_team();
+    omp_thread *member;
+    omp_thread **pnext;
 
     thread.arrived = true;                      // signal that this thread has reached the barrier
 
-    if(team.arrived == false)
-        {                                       // get here if any team member has not yet arrived
-        thread.context.suspend();               // suspend this thread until all other threads have arrived
-        return;                                 // when resumed, some other thread has done all the barrier cleanup work, so just keep going
-        }
-
-    for(omp_thread *member = team.members; member != 0; member = member->next)
+    // walk the list of all team members. If any member has not arrived yet, suspend myself.
+    member = &team;
+    pnext = &team.members;
+    while(member)
         {
         if(member->arrived == false)
             {                                   // get here if any team member has not yet arrived
-            member->context.suspend();          // suspend this thread until all other threads have arrived
+            thread.context.suspend();           // suspend this thread until all other threads have arrived
             return;                             // when resumed, some other thread has done all the barrier cleanup work, so just keep going
             }
+        member = *pnext;
+        pnext = &member->next;
         }
 
-    // get here if all threads in the team have arrived at the barrier
-    // since this thread is the last one to arrive, all others are suspended waiting for it
-    // clear the "arrived" flags and resume all suspended threads
+    // Only get here if all other team members have arrived, which mean this thread
+    // is the last to arrive, and all other team members are suspended.
+    // When the last team member arrives it walks the list again, clears all the "arrived" flags,
+    // and resumes all the other members.
 
-    team.arrived = false;
-    if(&team != &thread)team.context.resume();  // if I am not the master resume the master
-    for(omp_thread *member = team.members; member != 0; member = member->next)
+    member = &team;
+    pnext = &team.members;
+    while(member)
         {
         member->arrived = false;
-        if(member != &thread)
-            {                                   // get here if any team member has not yet arrived
-            member->context.resume();           // suspend this thread until all other threads have arrived
+        if(member != &thread)                   // don't try to resume myself
+            {
+            member->context.resume();           // resume any other thread in this team
             }
+        member = *pnext;
+        pnext = &member->next;
         }
     }
 
@@ -294,34 +332,34 @@ void GOMP_critical_start()
     }
 
 extern "C"
-void GOMP_atomic_start()
-    {
-    GOMP_critical_start();
-    }
-
-
-extern "C"
 void GOMP_critical_end()
     {
     omp_thread &team = *omp_this_team();
-    omp_thread *thread = &team;
+    omp_thread *member = &team;
     omp_thread **pnext = &team.members;
 
     team.mutex = false;
 
-    while(thread)                               // resume a waiting team member
+    while(member)                               // resume a waiting team member
         {
-        if(thread->mwaiting == true)
+        if(member->mwaiting == true)
             {
-            thread->context.resume();           // resume the next context in the rotation
+            member->context.resume();           // resume the next context in the rotation
             return;
             }
         else
             {
-            thread = *pnext;
-            pnext = &thread->next;
+            member = *pnext;
+            pnext = &member->next;
             }
         }
+    }
+
+#if 0
+extern "C"
+void GOMP_atomic_start()
+    {
+    GOMP_critical_start();
     }
 
 extern "C"
@@ -329,7 +367,7 @@ void GOMP_atomic_end()
     {
     GOMP_critical_end();
     }
-
+#endif
 
 
 extern "C"

@@ -540,17 +540,15 @@ uint32_t interp(uintptr_t arg)
         HELP(  "stk                             dump stacks")
         else if(buf[0]=='s' && buf[1]=='t' && buf[2]=='k')
             {
-            printf("\ninterp stack:\n");
-            dump(&InterpStack, sizeof(InterpStack));
+            for(int i=0; i<GOMP_MAX_NUM_THREADS; i++)
+                {
+                extern const char *thread_names[];
+                printf("\%s stack, %d bytes:\n", thread_names[i], omp_threads[i].stack_high - omp_threads[i].stack_low);
+                dump(omp_threads[i].stack_low, omp_threads[i].stack_high - omp_threads[i].stack_low);
+                }
 
             printf("\nTestStack:\n");
             dump(&TestStack, sizeof(TestStack));
-
-            for(int i=0; i<GOMP_MAX_NUM_THREADS; i++)
-                {
-                printf("\nomp thread %d stack:\n", i);
-                dump(omp_threads[i].stack_low, omp_threads[i].stack_high - omp_threads[i].stack_low);
-                }
             }
 
         else if(buf[0]=='?')

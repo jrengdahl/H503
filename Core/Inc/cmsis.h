@@ -38,6 +38,7 @@ inline bool COMPILER_BARRIER()
     _Pragma("GCC diagnostic pop")
 
 
+#define NUM_ELEMENTS(ARRAY) (sizeof(ARRAY)/sizeof(ARRAY[0]))
 
 
 

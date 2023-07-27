@@ -38,7 +38,7 @@ static int ids[THREADS+10];                // an array to record what threads ra
 // step: the depth of recursion, starts at zero and increments for each level descended.
 // left: the number of balls remaining to be chosen. Starts at colors*n and decrements for each recursion.
 
-static void rpermute(unsigned input, unsigned char (&output)[MAX], int step, int left)
+static void permuter(unsigned input, unsigned char (&output)[MAX], int step, int left)
     {
     int id = omp_get_thread_num();                                          // record the thread number
     ids[id] = id;                                                           // for analysis only, it's not used in the permutation calculation
@@ -72,7 +72,7 @@ static void rpermute(unsigned input, unsigned char (&output)[MAX], int step, int
                 output[step] = i;                                           // pick a ball of that color
                 #pragma omp task firstprivate(output) if(step < plevel)     // note that firstprivate make a copy of the output for the new task
                     {
-                    rpermute(cdec(i, input), output, step+1, left-1);       // and recurse, deleting one ball of the chosen color from the input
+                    permuter(cdec(i, input), output, step+1, left-1);       // and recurse, deleting one ball of the chosen color from the input
                     }
                 }
             }
@@ -107,7 +107,7 @@ void permute(int colors_arg, int balls, int plevel_arg, int verbose_arg)
 
     #pragma omp parallel num_threads(THREADS)           // kick off the permuter
     #pragma omp single
-    rpermute(input, output, 0, colors*balls);
+    permuter(input, output, 0, colors*balls);
 
     for(auto id: ids)maxthread = id>maxthread?id:maxthread; // figure out how many threads were used
 

@@ -18,9 +18,6 @@
 #include "cmsis.h"
 
 
-Context BackgroundContext;
-
-
 // Suspend the current thread into a Thread object,
 // pop the next thread from the pending stack into the
 // register set, and resume running it.
@@ -145,19 +142,6 @@ void Context::start_switch2()
     __asm__ __volatile__(
     LOAD_CONTEXT
 "   bx      lr                          \n"
-    );
-    }
-
-
-// init the threading system
-// At present, this consists only of pointer the current thread pointer to the background thread's struct
-void Context::init()
-    {
-    __asm__ __volatile__(
-"   mov r9, %[bgctx]"                                     // init the thread stack pointer
-    :
-    : [bgctx]"r"(&BackgroundContext)
-    :
     );
     }
 
