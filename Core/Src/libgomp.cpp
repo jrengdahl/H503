@@ -27,6 +27,7 @@
 // The threads' stacks
 // thread 0 (background) uses the stack defined in the linker script
 
+static char InterpStack[3072];                          // the stack for the interpreter thread
 static char gomp_stacks[GOMP_MAX_NUM_THREADS-2][GOMP_STACK_SIZE] __ALIGNED(16);
 
 // An array of tasks.
@@ -54,7 +55,7 @@ int omp_verbose = OMP_VERBOSE_DEFAULT;
 #define DPRINT(level) if(omp_verbose>=level)printf
 
 // either run the implicit task, or try to get one from the pool of ready tasks
-// TODO -- each team probably needs its own private ready task pool
+// TODO -- each team needs its own private ready task pool
 
 void run_implicit(task *task)
     {
@@ -164,12 +165,14 @@ void libgomp_init()
             :
             );
 
+            omp_threads[i].team = &omp_threads[i];                  // background points to itself as its team (it's a little bogus, as background and interp will have the same team, but it needs to point to something. Since neither background or interp ever terminate, it doesn't matter)
             omp_threads[i].stack_low = (char *)&_stack_start;
             omp_threads[i].stack_high = (char *)&_stack_end;
             }
         else if(i == 1)
             {
-            // interp startup is handled in background.cpp
+            libgomp_start_thread(omp_threads[i], gomp_worker, InterpStack, i);
+            thread_pool.add(&omp_threads[i]);
             }
         else
             {
@@ -255,9 +258,19 @@ void GOMP_parallel(
     run_implicit(team.task);
 
     // now that my task is done, wait for each of the other team members and any explicit tasks to complete
-    while(team.tasks)
+    if(&team == &omp_threads[0])                // if background thread
         {
-        yield();
+        while(1)                                // run the background polling loop
+            {
+            undefer();
+            }
+        }
+    else                                        // for all other threads
+        {
+        while(team.tasks)                       // the team master idles until the other members are done
+            {
+            yield();
+            }
         }
 
     // disassemble the team
@@ -700,8 +713,9 @@ int omp_get_thread_num()
     }
 
 // return the index of the current thread into the thread table
+// (not an OMP function)
 extern "C"
-int omp_get_thread_id()
+int gomp_get_thread_id()
     {
     omp_thread *thrd = omp_this_thread();
 

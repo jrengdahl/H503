@@ -547,10 +547,11 @@ uint32_t interp(uintptr_t arg)
                 dump(omp_threads[i].stack_low, omp_threads[i].stack_high - omp_threads[i].stack_low);
                 }
 
-            printf("\nTestStack:\n");
+            printf("\nTestStack, %d bytes:\n", sizeof(TestStack));
             dump(&TestStack, sizeof(TestStack));
             }
 
+        // print the help screen
         else if(buf[0]=='?')
             {
             }

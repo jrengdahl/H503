@@ -16,7 +16,7 @@
 
 extern void libgomp_init();
 
-extern "C" int omp_get_thread_id();
+extern "C" int gomp_get_thread_id();
 
 
 extern int omp_verbose;
@@ -48,21 +48,20 @@ struct omp_thread
     omp_thread *team = 0;   // pointer to the master thread of the team this thread is a member of
     omp_thread *next = 0;   // link to the next team member
 
-    unsigned single = 0;
+    unsigned single = 0;    // used to detect the first thread to arrive at a "single"
     bool arrived = false;   // arrived at a barrier, waiting for other threads to arrive
     bool mwaiting = false;  // waiting on a mutex
 
     // stuff pertaining to this thread as a team master
     int team_count = 0;
-    omp_thread *members = 0; // link to the first thread of the team this thread is the master of
+    omp_thread *members = 0; // list of the other members of the team this thread is the master of, which are linked by their "next" pointer.
     bool mutex = false;
-    unsigned tsingle = 0;
+    unsigned tsingle = 0;    // used to detect the first thread to arrive at a "single"
     int sections_count = 0;
     int sections = 0;
     int section = 0;
     int tasks = 0;
     void *copyprivate = 0;
-
 
     // debug data
     char *stack_low;        // low address of the stack (for debug)

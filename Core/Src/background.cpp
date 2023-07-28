@@ -8,6 +8,7 @@
 
 #include <stdint.h>
 #include <stdio.h>
+#include <omp.h>
 #include "context.hpp"
 #include "Port.hpp"
 #include "ContextFIFO.hpp"
@@ -31,7 +32,6 @@ extern Port txPort;                              // ports for use by the console
 extern Port rxPort;
 
 extern uint32_t interp(uintptr_t);               // the command line interpreter thread
-char InterpStack[3072];                          // the stack for the interpreter thread
 
 uint32_t LastTimeStamp = 0;
 
@@ -62,7 +62,7 @@ void background()                                       // powerup init and back
     // clear the background stack
     for(uint32_t *p = &_stack_start; p<&_stack_end; p++)*p = 0;
 
-    // switch to the background stack
+    // switch the background thread to the background stack
     __asm__ __volatile__(
 "   ldr sp, =_stack_end"
     );
@@ -73,7 +73,21 @@ void background()                                       // powerup init and back
 
     libgomp_init();                                     // init the OpenMP threading system, including setting background as thread 0
 
-    libgomp_start_thread(omp_threads[1], interp, InterpStack); // spawn the command line interpreter on core 0
+    #pragma omp parallel num_threads(2)
+    if(omp_get_thread_num() == 1)
+        {
+        interp(0);                                          // run the command line interpreter
+        }
+    // the interpreter never terminates, so the parallel never ends, and we never here past this point
+    // the background polling loop is embedded in GOMP_parallel
+
+
+    // Thread 0 is the backgound thread (this routine).
+    // Thread 1 runs the interpreter, and may have a different sized stack the the other threads.
+    // by kicking off the interp as an explicit task, it goes into the ready queue, and will
+    // be picked up and executed by the first thread in the defer queue, which will be thread 1.
+    // This is almost coincidental, so watch it if any changes are made to the startup code
+    // or how threads are scheduled.
 
     ////////////////////
     // background loop
