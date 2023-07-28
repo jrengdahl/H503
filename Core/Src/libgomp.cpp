@@ -258,19 +258,9 @@ void GOMP_parallel(
     run_implicit(team.task);
 
     // now that my task is done, wait for each of the other team members and any explicit tasks to complete
-    if(&team == &omp_threads[0])                // if background thread
+    while(team.tasks)
         {
-        while(1)                                // run the background polling loop
-            {
-            undefer();
-            }
-        }
-    else                                        // for all other threads
-        {
-        while(team.tasks)                       // the team master idles until the other members are done
-            {
-            yield();
-            }
+        yield();
         }
 
     // disassemble the team

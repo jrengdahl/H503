@@ -8,6 +8,7 @@
 
 #include <stdint.h>
 #include <stdio.h>
+#include <assert.h>
 #include <omp.h>
 #include "context.hpp"
 #include "Port.hpp"
@@ -74,13 +75,25 @@ void background()                                       // powerup init and back
     libgomp_init();                                     // init the OpenMP threading system, including setting background as thread 0
 
     #pragma omp parallel num_threads(2)
-    if(omp_get_thread_num() == 1)
+    if(omp_get_thread_num() == 0)
+        {
+        ////////////////////
+        // background loop
+        ////////////////////
+
+        while(1)
+            {
+            undefer();                                      // wake any threads that may have called yield
+            }
+        }
+    else if(omp_get_thread_num() == 1)
         {
         interp(0);                                          // run the command line interpreter
         }
-    // the interpreter never terminates, so the parallel never ends, and we never here past this point
-    // the background polling loop is embedded in GOMP_parallel
 
+    // neither of the above two threads terminate, so the parallel never ends, and we never here past this point
+
+    assert(false);
 
     // Thread 0 is the backgound thread (this routine).
     // Thread 1 runs the interpreter, and may have a different sized stack the the other threads.
@@ -89,13 +102,5 @@ void background()                                       // powerup init and back
     // This is almost coincidental, so watch it if any changes are made to the startup code
     // or how threads are scheduled.
 
-    ////////////////////
-    // background loop
-    ////////////////////
-
-    while(1)
-        {
-        undefer();                                      // wake any threads that may have called yield
-        }
     }
 
