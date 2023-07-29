@@ -75,32 +75,19 @@ void background()                                       // powerup init and back
     libgomp_init();                                     // init the OpenMP threading system, including setting background as thread 0
 
     #pragma omp parallel num_threads(2)
-    if(omp_get_thread_num() == 0)
+    if(omp_get_thread_num() == 0)                       // thread 0 runs this:
         {
-        ////////////////////
-        // background loop
-        ////////////////////
-
-        while(1)
+        while(1)                                        // run sthe background polling loop
             {
-            undefer();                                      // wake any threads that may have called yield
+            undefer();                                  // wake any threads that may have called yield
             }
         }
-    else if(omp_get_thread_num() == 1)
+    else if(omp_get_thread_num() == 1)                  // and thread 1 runs this:
         {
-        interp(0);                                          // run the command line interpreter
+        interp(0);                                      // run the command line interpreter
         }
 
     // neither of the above two threads terminate, so the parallel never ends, and we never here past this point
-
     assert(false);
-
-    // Thread 0 is the backgound thread (this routine).
-    // Thread 1 runs the interpreter, and may have a different sized stack the the other threads.
-    // by kicking off the interp as an explicit task, it goes into the ready queue, and will
-    // be picked up and executed by the first thread in the defer queue, which will be thread 1.
-    // This is almost coincidental, so watch it if any changes are made to the startup code
-    // or how threads are scheduled.
-
     }
 

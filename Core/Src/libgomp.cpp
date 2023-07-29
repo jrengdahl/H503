@@ -165,7 +165,7 @@ void libgomp_init()
             :
             );
 
-            omp_threads[i].team = &omp_threads[i];                  // background points to itself as its team (it's a little bogus, as background and interp will have the same team, but it needs to point to something. Since neither background or interp ever terminate, it doesn't matter)
+            omp_threads[i].team = (omp_thread *)0xFFFFFFFF;         // must never be used, since background cannot be a member of a team
             omp_threads[i].stack_low = (char *)&_stack_start;
             omp_threads[i].stack_high = (char *)&_stack_end;
             }
@@ -200,12 +200,13 @@ void GOMP_parallel(
         }
 
     team.mutex = false;
-    team.single = 0;
+    team.tsingle = 0;
     team.sections_count = 0;
     team.sections = 0;
     team.section= 0;
     team.copyprivate = 0;
     team.team_count = 0;
+    team.tasks = 0;
     team.members = 0;
 
     // create a team, give each member a task, and start it
@@ -639,7 +640,7 @@ void GOMP_task (    void (*fn) (void *),
     else                                        // else queue the task to be executed by another context later
         {
         char *argmem = (char *)malloc(arg_size + arg_align);                                    // allocate memory for data
-        DPRINT(2)("malloc data %8p, id = %3d\n", argmem, thread.id);
+        DPRINT(2)("malloc data %8p, %ld, id = %3d\n", argmem, arg_size, thread.id);
         if(argmem == 0)
             {
             printf("malloc returned 0\n");
