@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <omp.h>
 #include <math.h>
+#include "libgomp.hpp"
 
 static const int COLORS = 2;               // max number of colors
 static const int MAX = 16;                 // max number of colors times steps
@@ -40,7 +41,7 @@ static int ids[THREADS+10];                // an array to record what threads ra
 
 static void permuter(unsigned input, unsigned char (&output)[MAX], int step, int left)
     {
-    int id = omp_get_thread_num();                                          // record the thread number
+    int id = gomp_get_thread_id();                                          // record the thread number
     ids[id] = id;                                                           // for analysis only, it's not used in the permutation calculation
 
     if(left == 0)                                                           // if all the balls have been chosen
@@ -57,7 +58,7 @@ static void permuter(unsigned input, unsigned char (&output)[MAX], int step, int
                 p += n;
                 left -= n;
                 }
-            printf("%s (%d)\n", buf, omp_get_thread_num());
+            printf("%s (%d(%d))\n", buf, omp_get_thread_num(), id);
             }
 
         #pragma omp atomic
@@ -109,7 +110,7 @@ void permute(int colors_arg, int balls, int plevel_arg, int verbose_arg)
     #pragma omp single
     permuter(input, output, 0, colors*balls);
 
-    for(auto id: ids)maxthread = id>maxthread?id:maxthread; // figure out how many threads were used
+    for(auto id: ids)maxthread = id>maxthread?id:maxthread; // figure out max thread used
 
     printf("permutations = %d\n", permutations);        // print results
     printf("maxthread = %d\n", maxthread);

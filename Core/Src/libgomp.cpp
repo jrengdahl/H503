@@ -65,11 +65,11 @@ void run_implicit(task *task)
     TASKFN *fn;
     char *data;
 
-    DPRINT(2)("start implicit task %8p, id = %3d\n", task, thread.team_id);
+    DPRINT(2)("start implicit task %8p, id = %d(%d)\n", task, thread.team_id, thread.id);
     fn = task->fn;                      // run the assigned implicit task
     data = task->data;
     fn(data);
-    DPRINT(2)("end   implicit task %8p, id = %3d\n", task, thread.team_id);
+    DPRINT(2)("end   implicit task %8p, id = %d(%d)\n", task, thread.team_id, thread.id);
     task_pool.add(task);                // return the task to the pool
     team.tasks--;
     thread.task = 0;                    // forget the completed task
@@ -83,11 +83,11 @@ void run_explicit(task *task)
     TASKFN *fn;
     char *data;
 
-    DPRINT(2)("start explicit task %8p, id = %3d\n", task, thread.team_id);
+    DPRINT(2)("start explicit task %8p, id = %d(%d)\n", task, thread.team_id, thread.id);
     fn = task->fn;                      // run the explicit task
     data = task->data;
     fn(data);
-    DPRINT(2)("end   explicit task %8p, id = %3d\n", task, thread.team_id);
+    DPRINT(2)("end   explicit task %8p, id = %d(%d)\n", task, thread.team_id, thread.id);
     data = data - data[-1];             // undo the arg alignment to recover the address returned from malloc
     DPRINT(2)("free data %8p\n", data);
     free(data);                         // free the data
@@ -252,7 +252,7 @@ void GOMP_parallel(
         team.tasks++;
         thread->task = task;                     // this field becoming non-zero kicks off the implicit task
 
-        DPRINT(2)("create implicit task %8p, id = %3d\n", task, i);
+        DPRINT(2)("create implicit task %8p, id = %d(%d)\n", task, i, thread->id);
         }
 
     // since the master is also a member of this team, execute my task
@@ -628,19 +628,19 @@ void GOMP_task (    void (*fn) (void *),
             char *dst = &buf[arg_align-1];
             dst = (char *)((uintptr_t)dst & ~(arg_align-1));
             cpyfn(dst, data);
-            DPRINT(2)("call explicit task, id = %3d, code = %8p, data = %8p\n", thread.id, fn, data);
+            DPRINT(2)("call explicit task, id = %d(%d), code = %8p, data = %8p\n", thread.team_id, thread.id, fn, data);
             fn(dst);            
             }
         else
             {
-            DPRINT(2)("call explicit task, id = %3d, code = %8p, data = %8p\n", thread.id, fn, data);
+            DPRINT(2)("call explicit task, id = %d(%d), code = %8p, data = %8p\n", thread.team_id, thread.id, fn, data);
             fn(data);
             }
         }
     else                                        // else queue the task to be executed by another context later
         {
         char *argmem = (char *)malloc(arg_size + arg_align);                                    // allocate memory for data
-        DPRINT(2)("malloc data %8p, %ld, id = %3d\n", argmem, arg_size, thread.id);
+        DPRINT(2)("malloc data %8p, %ld, id = %d(%d)\n", argmem, arg_size, thread.team_id, thread.id);
         if(argmem == 0)
             {
             printf("malloc returned 0\n");
@@ -670,7 +670,7 @@ void GOMP_task (    void (*fn) (void *),
         task->fn = fn;                          // give it code
         task->data = arg;                       // and data
 
-        DPRINT(2)("create explicit task %8p, id = %3d\n", task, thread.id);
+        DPRINT(2)("create explicit task %8p, id = %d(%d)\n", task, thread.team_id, thread.id);
         ready_tasks.add(task);                  // add it to the list of explicit tasks
         }
     }
