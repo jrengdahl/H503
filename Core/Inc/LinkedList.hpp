@@ -1,7 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
-// LinedList.hpp
+// LinkedList.hpp
 // A FIFO linked list.
-// Elements must have a "ListNext" data member.
 // This version is not lock-free, and may need to be protected by a critical region.
 //
 // Copyright (c) 2023 Jonathan Engdahl
@@ -10,8 +9,8 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 
-#ifndef LinkedList_HPP
-#define LinkedLIst_HPP
+#ifndef LINKEDLIST_HPP
+#define LINKEDLIST_HPP
 
 #include "cmsis.h"
 
@@ -20,10 +19,12 @@
 // class LinkedList
 //
 // template parameter T      - Type of data this FIFO will hold.
+// template parameter mpNext - member pointer to the "next" field to use for the link
 //
+// Example: LinkedList<foo, &foo::next> list;
 /////////////////////////////////////////////////////////////////////////////
 
-template<typename T>
+template<typename T, T *T::*mpNext>
 class LinkedList
     {
     protected:
@@ -53,9 +54,9 @@ class LinkedList
 
     void add(T *value)
         {
-        value->ListNext = 0;
+        value->*mpNext = 0;
         *tail = value;
-        tail = &value->ListNext;
+        tail = &(value->*mpNext);
         }
 
 
@@ -74,12 +75,12 @@ class LinkedList
 
         x = head;
         if(x == 0)return false;
-        head = x->ListNext;
+        head = x->*mpNext;
         if(head == 0)
             {
             tail = &head;
             }
-        x->ListNext = 0;
+        x->*mpNext = 0;
         value = x;
         return true;
         }
