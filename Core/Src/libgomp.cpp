@@ -98,12 +98,12 @@ void run_explicit(task *task)
 
 static uint32_t gomp_worker(uintptr_t id)
     {
-    omp_thread &thread = *omp_this_thread();
-    omp_thread &team = *omp_this_team();
-    task *task;
-
     while(true)
         {
+        omp_thread &thread = *omp_this_thread();
+        omp_thread &team = *omp_this_team();
+        task *task;
+
         if((task=thread.task) != 0)
             {
             run_implicit(task);
@@ -253,6 +253,7 @@ void GOMP_parallel(
 
     // since the master is also a member of this team, execute my task
     run_implicit(team.task);
+    yield();
 
     // now that my task is done, wait for each of the other team members and any explicit tasks to complete
     while(team.task_count)

@@ -67,7 +67,7 @@ static void permuter(unsigned input, unsigned char (&output)[MAX], int step, int
             if(cget(i, input) > 0)                                          // if there are any left of that color
                 {
                 output[step] = i;                                           // pick a ball of that color
-//                #pragma omp task firstprivate(output) if(step < plevel)     // note that firstprivate make a copy of the output for the new task
+                #pragma omp task firstprivate(output) if(step < plevel)     // note that firstprivate make a copy of the output for the new task
                     {
                     permuter(cdec(i, input), output, step+1, left-1);       // and recurse, deleting one ball of the chosen color from the input
                     }
