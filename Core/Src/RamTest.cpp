@@ -9,8 +9,8 @@
 // small systems.
 
 
+#include <ContextFIFO.hpp>
 #include <stdio.h>
-#include "ThreadFIFO.hpp"
 #include "cyccnt.hpp"
 #include "local.h"
 

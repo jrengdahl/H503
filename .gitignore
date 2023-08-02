@@ -5,3 +5,5 @@
 *.bak
 /H503.kicad/H503.xml
 /Core/Src/thread.cpp.o
+/H503-edu.jdebug.user
+/Core/Inc/test.cpp

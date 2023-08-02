@@ -109,7 +109,7 @@ extern USBD_HandleTypeDef hUsbDeviceFS;
   * @{
   */
 
-uint8_t CDC_Transmit_FS(uint8_t* Buf, uint16_t Len);
+uint8_t CDC_Transmit_FS(uint8_t* Buf1, uint16_t Len1, uint8_t* Buf2, uint16_t Len2);
 
 /* USER CODE BEGIN EXPORTED_FUNCTIONS */
 

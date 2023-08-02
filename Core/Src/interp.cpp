@@ -4,27 +4,32 @@
 // BSD license -- see the accompanying LICENSE file
 
 
+#include <context.hpp>
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
+#include <ContextFIFO.hpp>
 #include <math.h>
 #include "cmsis.h"
 #include "local.h"
-#include "thread.hpp"
-#include "threadFIFO.hpp"
 #include "bogodelay.hpp"
 #include "serial.h"
 #include "random.hpp"
 #include "cyccnt.hpp"
 #include "main.h"
 #include "boundaries.h"
+#include "libgomp.hpp"
+#include "omp.h"
 
 extern void bear();
 extern "C" char *strchrnul(const char *s, int c);   // POSIX function but not included in newlib, see https://linux.die.net/man/3/strchr
 extern void summary(unsigned char *, unsigned, unsigned, int);
-void RamTest(uint8_t *addr, unsigned size, unsigned repeat, unsigned limit);
+extern void RamTest(uint8_t *addr, unsigned size, unsigned repeat, unsigned limit);
 extern "C" void SystemClock_PLL_Config(unsigned);
 extern "C" void SystemClock_HSI_Config(void);
+extern char InterpStack[2048];
+extern omp_thread omp_threads[GOMP_MAX_NUM_THREADS];
+
 
 // print a large number with commas
 void commas(uint32_t x)
@@ -49,30 +54,36 @@ void commas(uint32_t x)
 
 char buf[INBUFLEN];
 
-char TestStack[1024];
-Thread TestPort;
+// a simple thread used to benchmark the thread switching calls
+Context TestCtx;
+char TestStack[512];
 unsigned TestCount = 0;
-uint32_t TestThread()
+
+uint32_t TestThread(uintptr_t arg)
     {
+    (void)arg;
+
     while(TestCount--)
         {
-        TestPort.suspend();
-        TestPort.suspend();
-        TestPort.suspend();
-        TestPort.suspend();
-        TestPort.suspend();
-        TestPort.suspend();
-        TestPort.suspend();
-        TestPort.suspend();
-        TestPort.suspend();
-        TestPort.suspend();
+        Context::suspend();
+        Context::suspend();
+        Context::suspend();
+        Context::suspend();
+        Context::suspend();
+        Context::suspend();
+        Context::suspend();
+        Context::suspend();
+        Context::suspend();
+        Context::suspend();
         }
     return 0;
     }
 
 
-uint32_t interp()
+uint32_t interp(uintptr_t arg)
     {
+    (void)arg;
+
     bear();
     printf("hello, world!\n");
 
@@ -418,21 +429,21 @@ uint32_t interp()
 
             count = getdec(&p);
             TestCount = count;
-            Thread::spawn(TestThread, TestStack);
+            TestCtx.spawn(TestThread, TestStack);
             Elapsed();
 
-            while(!Thread::done(TestStack))
+            while(!Context::done(TestStack))
                     {
-                    TestPort.resume();
-                    TestPort.resume();
-                    TestPort.resume();
-                    TestPort.resume();
-                    TestPort.resume();
-                    TestPort.resume();
-                    TestPort.resume();
-                    TestPort.resume();
-                    TestPort.resume();
-                    TestPort.resume();
+                    TestCtx.resume();
+                    TestCtx.resume();
+                    TestCtx.resume();
+                    TestCtx.resume();
+                    TestCtx.resume();
+                    TestCtx.resume();
+                    TestCtx.resume();
+                    TestCtx.resume();
+                    TestCtx.resume();
+                    TestCtx.resume();
                     }
 
             ticks = Elapsed();
@@ -442,10 +453,105 @@ uint32_t interp()
              }
 
 
+//              //                              //
+        HELP(  "tmp                             read the temperature sensor")
+        else if(buf[0]=='t' && buf[1]=='m' && buf[2]=='p')
+            {
+            extern int read_temperature();
+            int last_avg = -1;
+            int repeat = 50;
+            int avg = 30;
+            int count = 0;
+            int last_count = 0;
 
+            if(isdigit(*p))                                                 // while there is any data left on the command line
+                {
+                repeat = getdec(&p);                                        // get the count
+                }
 
+            while(repeat && !ControlC)
+                {
+                int tmp = read_temperature();
 
+                avg = (avg*9 + tmp)/10;
 
+                if(avg-last_avg > 1 || last_avg-avg > 1)
+                    {
+                    printf("temperature: %3d C, %3d F, avg = %3d C, delta = %d\n", tmp, (tmp*18 + 325)/10, avg, count - last_count);
+                    last_avg = avg;
+                    last_count = count;
+                    -- repeat;
+                    }
+
+                ++count;
+
+                yield();
+                }
+            }
+
+//              //                              //
+        HELP(  "omp <num>                       run an OMP test")
+        else if(buf[0]=='o' && buf[1]=='m' && buf[2]=='p')
+            {
+            extern void omp_hello(int);
+            extern void omp_for(int);
+            extern void omp_single(int);
+            extern void permute(int colors_arg, int balls, int plevel_arg, int verbose_arg);
+
+            int test = 0;
+
+            if(isdigit(*p))
+                {
+                test = getdec(&p);                              // get the count
+                skip(&p);
+                }
+
+            switch(test)
+                {
+            case 0: omp_hello(getdec(&p));      break;
+            case 1: omp_for(getdec(&p));        break;
+            case 2: omp_single(getdec(&p));     break;
+            case 3:
+                int colors = getdec(&p);
+                skip(&p);
+                int balls = getdec(&p);
+                skip(&p);
+                int plevel = *p?getdec(&p):32;
+                skip(&p);
+                int v = *p?getdec(&p):0;
+                permute(colors, balls, plevel, v);
+                break;
+                }
+            }
+
+//              //                              //
+        HELP(  "v <num>                         set verbosity level")
+        else if(buf[0]=='v' && buf[1]==' ')
+            {
+            extern int omp_verbose;
+
+            if(isdigit(*p))
+                {
+                omp_verbose = getdec(&p);                              // get the count
+                }
+            }
+
+//              //                              //
+        HELP(  "stk                             dump stacks")
+        else if(buf[0]=='s' && buf[1]=='t' && buf[2]=='k')
+            {
+            for(int i=0; i<GOMP_MAX_NUM_THREADS; i++)
+                {
+                extern const char *thread_names[];
+                printf("\%s stack, %d bytes:\n", thread_names[i], omp_threads[i].stack_high - omp_threads[i].stack_low);
+                dump(omp_threads[i].stack_low, omp_threads[i].stack_high - omp_threads[i].stack_low);
+                }
+
+            printf("\nTestStack, %d bytes:\n", sizeof(TestStack));
+            dump(&TestStack, sizeof(TestStack));
+            }
+
+        // print the help screen
         else if(buf[0]=='?')
             {
             }

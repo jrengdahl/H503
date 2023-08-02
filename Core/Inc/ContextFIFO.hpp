@@ -13,27 +13,27 @@
 
 
 
-#ifndef THREADFIFO_HPP
-#define THREADFIFO_HPP
+#ifndef CONTEXTFIFO_HPP
+#define CONTEXTFIFO_HPP
 
+#include <context.hpp>
 #include "cmsis.h"
-#include "thread.hpp"
 #include "FIFO.hpp"
 
 static const unsigned THREAD_FIFO_DEPTH = 15;    // must be a power of 2, minus 1, if this is changed, the inline ASM must be updated
 
-class ThreadFIFO : public FIFO<Thread, THREAD_FIFO_DEPTH>
+class ContextFIFO : public FIFO<Context *, THREAD_FIFO_DEPTH>
     {
     public:
 
-    bool suspend();
+    void suspend();
     void suspend_switch();
     bool resume();
     void resume_switch();
     };
 
 
-extern ThreadFIFO DeferFIFO;
+extern ContextFIFO DeferFIFO;
 
 
 // suspend the current thread at the DeferFIFO.
@@ -55,5 +55,5 @@ static inline void undefer()
     }
 
 
-#endif // THREADFIFO_HPP
+#endif // CONTEXTFIFO_HPP
 

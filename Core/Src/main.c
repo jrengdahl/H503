@@ -18,6 +18,7 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "adc.h"
 #include "icache.h"
 #include "usb.h"
 #include "gpio.h"
@@ -100,11 +101,20 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
-  MX_USB_Device_Init();
+  MX_USB_PCD_Init();
   MX_ICACHE_Init();
+  MX_ADC1_Init();
   /* USER CODE BEGIN 2 */
 
+  MX_USB_Device_Init();
   vcp_init();
+
+  /* Perform ADC calibration */
+  if (HAL_ADCEx_Calibration_Start(&hadc1, ADC_SINGLE_ENDED) != HAL_OK)
+    {
+    /* Calibration Error */
+    Error_Handler();
+    }
 
   extern void background();
   background();

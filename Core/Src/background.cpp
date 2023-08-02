@@ -8,12 +8,17 @@
 
 #include <stdint.h>
 #include <stdio.h>
-#include "thread.hpp"
-#include "ThreadFIFO.hpp"
+#include <assert.h>
+#include <omp.h>
+#include "context.hpp"
+#include "Port.hpp"
+#include "ContextFIFO.hpp"
 #include "serial.h"
 #include "main.h"
 #include "usbd_cdc_if.h"
 #include "cyccnt.hpp"
+#include "libgomp.hpp"
+#include "boundaries.h"
 
 // The DeferFIFO used by yield, for rudimentary time-slicing.
 // Note that the only form of "time-slicing" occurs when a thread
@@ -22,13 +27,12 @@
 // level until it calls yield, so in some cases, that thread may call
 // yield shortly after the call to suspend.
 
-ThreadFIFO DeferFIFO;
+ContextFIFO DeferFIFO;
 
-extern Thread txPort;                               // ports for use by the console (serial or USB VCP)
-extern Thread rxPort;
+extern Port txPort;                              // ports for use by the console (serial or USB VCP)
+extern Port rxPort;
 
-extern uint32_t interp();                           // the command line interpreter thread
-char InterpStack[2048];                             // the stack for the interpreter thread
+extern uint32_t interp(uintptr_t);               // the command line interpreter thread
 
 uint32_t LastTimeStamp = 0;
 
@@ -53,20 +57,37 @@ void background()                                       // powerup init and back
     // powerup initialization
     ///////////////////////////
 
-    Thread::init();                                     // init the bare metal threading system
+    // at powerup the stack pointer points to the end of RAM
+    // the first thing that must be done is to switch to the stack defined by the linker script
+
+    // clear the background stack
+    for(uint32_t *p = &_stack_start; p<&_stack_end; p++)*p = 0;
+
+    // switch the background thread to the background stack
+    __asm__ __volatile__(
+"   ldr sp, =_stack_end"
+    );
+
     InitCyccnt();                                       // enable the cycle counter
 
     CPACR |= CPACR_VFPEN;                               // enable the floating point coprocessor
 
-    Thread::spawn(interp, InterpStack);                 // spawn the command line interpreter on core 0
+    libgomp_init();                                     // init the OpenMP threading system, including setting background as thread 0
 
-    ////////////////////
-    // background loop
-    ////////////////////
-
-    while(1)
+    #pragma omp parallel num_threads(2)
+    if(omp_get_thread_num() == 0)                       // thread 0 runs this:
         {
-        undefer();                                      // wake any threads that may have called yield
+        while(1)                                        // run sthe background polling loop
+            {
+            undefer();                                  // wake any threads that may have called yield
+            }
         }
+    else if(omp_get_thread_num() == 1)                  // and thread 1 runs this:
+        {
+        interp(0);                                      // run the command line interpreter
+        }
+
+    // neither of the above two threads terminate, so the parallel never ends, and we never here past this point
+    assert(false);
     }
 
