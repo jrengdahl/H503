@@ -36,9 +36,6 @@ static task tasks[GOMP_NUM_TASKS];
 // A pool of idle tasks
 static FIFO<task *, GOMP_NUM_TASKS> task_pool;
 
-// tasks ready to be run
-static FIFO<task *, GOMP_NUM_TASKS> ready_tasks;
-
 // an array of omp_threads
 omp_thread omp_threads[GOMP_MAX_NUM_THREADS];
 
@@ -71,7 +68,7 @@ void run_implicit(task *task)
     fn(data);
     DPRINT(2)("end   implicit task %8p, id = %d(%d)\n", task, thread.team_id, thread.id);
     task_pool.add(task);                // return the task to the pool
-    team.tasks--;
+    team.task_count--;
     thread.task = 0;                    // forget the completed task
     }
 
@@ -92,7 +89,7 @@ void run_explicit(task *task)
     DPRINT(2)("free data %8p\n", data);
     free(data);                         // free the data
     task_pool.add(task);                // free the task
-    team.tasks--;
+    team.task_count--;
     }
 
 
@@ -102,6 +99,7 @@ void run_explicit(task *task)
 static uint32_t gomp_worker(uintptr_t id)
     {
     omp_thread &thread = *omp_this_thread();
+    omp_thread &team = *omp_this_team();
     task *task;
 
     while(true)
@@ -110,7 +108,7 @@ static uint32_t gomp_worker(uintptr_t id)
             {
             run_implicit(task);
             }
-        else if(ready_tasks.take(task))         // if there are any explicit tasks waiting for a context
+        else if(team.task_list.take(task))         // if there are any explicit tasks waiting for a context
             {
             run_explicit(task);
             }
@@ -192,7 +190,6 @@ void GOMP_parallel(
     unsigned flags __attribute__((__unused__)))     // flags (ignored for now)
     {
     omp_thread &team = *omp_this_thread();
-    omp_thread **pnext;
 
     if(num_threads == 0)
         {
@@ -206,8 +203,9 @@ void GOMP_parallel(
     team.section= 0;
     team.copyprivate = 0;
     team.team_count = 0;
-    team.tasks = 0;
-    team.members = 0;
+    team.task_count = 0;
+    team.members.init();
+    team.task_list.init();
 
     // create a team, give each member a task, and start it
     for(unsigned i=0; i<num_threads; i++)
@@ -219,7 +217,6 @@ void GOMP_parallel(
         if(i == 0)
             {
             thread = &team;
-            pnext = &team.members;
             }
         else
             {
@@ -229,9 +226,8 @@ void GOMP_parallel(
                 printf("thread_pool is empty\n");
                 break;
                 }
-            *pnext = thread;
-            pnext = &thread->next;
             thread->team = &team;
+            team.members.add(thread);
             }
 
         thread->team_id = i;
@@ -249,7 +245,7 @@ void GOMP_parallel(
         task->fn = fn;
         task->data = data;
         team.team_count++;
-        team.tasks++;
+        team.task_count++;
         thread->task = task;                     // this field becoming non-zero kicks off the implicit task
 
         DPRINT(2)("create implicit task %8p, id = %d(%d)\n", task, i, thread->id);
@@ -259,18 +255,22 @@ void GOMP_parallel(
     run_implicit(team.task);
 
     // now that my task is done, wait for each of the other team members and any explicit tasks to complete
-    while(team.tasks)
+    while(team.task_count)
         {
+        task *task;
+        if(team.task_list.take(task))         // if there are any explicit tasks waiting for a context
+            {
+            run_explicit(task);
+            }
         yield();
         }
 
     // disassemble the team
-    omp_thread *member = team.members;
-    while(member)
+    while(true)
         {
-        omp_thread *tmp = member;
-        member = member->next;
-        thread_pool.add(tmp);
+        omp_thread *thread;
+        if(!team.members.take(thread))break;
+        thread_pool.add(thread);
         }
     }
 
@@ -287,7 +287,7 @@ void GOMP_barrier()
 
     // walk the list of all team members. If any member has not arrived yet, suspend myself.
     member = &team;
-    pnext = &team.members;
+    pnext = &team.members.head;
     while(member)
         {
         if(member->arrived == false)
@@ -305,7 +305,7 @@ void GOMP_barrier()
     // and resumes all the other members.
 
     member = &team;
-    pnext = &team.members;
+    pnext = &team.members.head;
     while(member)
         {
         member->arrived = false;
@@ -340,7 +340,7 @@ void GOMP_critical_end()
     {
     omp_thread &team = *omp_this_team();
     omp_thread *member = &team;
-    omp_thread **pnext = &team.members;
+    omp_thread **pnext = &team.members.head;
 
     team.mutex = false;
 
@@ -665,13 +665,13 @@ void GOMP_task (    void (*fn) (void *),
             printf("task_pool.take failed\n");
             return;
             }
-        team.tasks++;
+        team.task_count++;
 
         task->fn = fn;                          // give it code
         task->data = arg;                       // and data
 
         DPRINT(2)("create explicit task %8p, id = %d(%d)\n", task, thread.team_id, thread.id);
-        ready_tasks.add(task);                  // add it to the list of explicit tasks
+        team.task_list.add(task);                  // add it to the list of explicit tasks
         }
     }
 

@@ -27,13 +27,10 @@
 template<typename T, T *T::*mpNext>
 class LinkedList
     {
-    protected:
+    public:
 
     T *head = 0;
     T **tail = &head;
-
-
-    public:
 
     ///////////////////////////////////////////////////////////////////////////////
     //  LinkedList::operator bool
@@ -84,7 +81,17 @@ class LinkedList
         value = x;
         return true;
         }
+
+
+    // reinitialize the list
+    void init()
+        {
+        head = 0;
+        tail = &head;
+        }
+
     };
+
 
 
 #endif // LINKEDLIST_HPP
