@@ -86,7 +86,6 @@ void run_explicit(task *task)
     fn(data);
     DPRINT(2)("end   explicit task %8p, id = %d(%d)\n", task, thread.team_id, thread.id);
     data = data - data[-1];             // undo the arg alignment to recover the address returned from malloc
-    DPRINT(2)("free data %8p\n", data);
     free(data);                         // free the data
     task_pool.add(task);                // free the task
     team.task_count--;
@@ -641,7 +640,6 @@ void GOMP_task (    void (*fn) (void *),
     else                                        // else queue the task to be executed by another context later
         {
         char *argmem = (char *)malloc(arg_size + arg_align);                                    // allocate memory for data
-        DPRINT(2)("malloc data %8p, %ld, id = %d(%d)\n", argmem, arg_size, thread.team_id, thread.id);
         if(argmem == 0)
             {
             printf("malloc returned 0\n");
