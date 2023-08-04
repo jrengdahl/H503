@@ -2,6 +2,7 @@ STM32H503RB test board and firmware
 
 This project includes a small OSHPark board for the new H503
 microcontroller from ST MIcro, and firmware to run on the board.
+The firmware includes OpenMP support for this bare metal microcontroller.
 
 
 THE CHIP
@@ -20,6 +21,8 @@ I see that they are out of stock with availability nearly a year out.
 Try findchips.com to search for availability. Often such chips are more
 easily available on a Nucleo board (although the Nucleo boards do not
 have trace connectors).
+
+The spec clock for the H503 is 250 Hz. It seems to run reliably up to 400 MHz.
 
 
 THE FIRMWARE
@@ -40,11 +43,16 @@ a simple command line interpeter with the following commands:
 -- execute a single STR to a given memory location
 -- print a summary of the flash and RAM
 -- run a benchmark of the thread switcher
+-- display the on-chip temperature sensor reading
+-- dump the thread stacks
+-- display the state of the free memory system
+-- run various OpenMP tests
+-- set the debug verbodity level
 -- print the help
 
 The command line processor is simple and easily expanded with new commands.
 
-The firmware takes about 32K of flash and 10K of RAM.
+The firmware takes about 40K of flash and 24K of RAM.
 
 For similar L412 and H743 projects, rather than using an FTDI
 USB-to-serial cable, or an on-board USB-to-serial chip, I decided to
@@ -86,6 +94,17 @@ and Linux. It is most commonly associated with massively parallel
 supercomputers such as Frontier and Fugaku (https://www.top500.org). I
 aim to show that it can also be useful for multi-threaded and parallel
 programming on single and multi-core embedded processors.
+
+The following OpenMP features are working:
+-- parallel
+-- parallel for
+-- single
+-- task
+-- firstprivate
+
+I have started migrating the powerup code and command line interpreter
+to using OpenMP primitives rather than the older threading calls to
+spawn new threads.
 
 This is experimental and ongoing.
 
@@ -153,6 +172,11 @@ solder you risk ripping the connector off the board if you are not real
 careful with the USB cable. If you use too much solder it can puddle
 under the connector and short out the signal pins.
 
+There is a newer version of the board that was manufactured by JLCPCB.
+All the small commodity parts are located on the bottom side and are
+soldered by JLCPCB. The CPU, connectors, and a couple parts that are
+not sourced by JLCPCB are on the top side and have to be hand soldered.
+
 
 TRACE
 
@@ -183,17 +207,18 @@ LQFP-32, have 5-pin trace ports. In fact, the L412 seems to be the only
 STM32 in LQFP-32 that has a trace port.
 
 Some Cortex-M7 chips from ST Micro have 2K or 4K on-chip trace buffers.
-These can be used with Ozone and an inexpensize J-Link Edu, though the
+These can be used with Ozone and an inexpensive J-Link Edu, though the
 trace depth is limited.
 
 -- a trace probe (unless you have an on-chip trace buffer). Trace probes
 are expensive. I am familiar with Lauterbach, which costs in the
 vicinity of $10,000. My Segger J-Trace was around $1800. In the UK or EU
-check out pdqlogic.com. Some people have used inexpensive USB logic
-analyzers with the Sigrok software to capture trace, but such a solution
-is harder to use (https://essentialscrap.com/tips/arm_trace).
+check out pdqlogic.com, but they won't ship to the USA. Some people have
+used inexpensive USB logic analyzers with the Sigrok software to capture
+trace, but such a solution is harder to use
+(https://essentialscrap.com/tips/arm_trace).
 
--- a trace capapble debugger. I use Segger Ozone, which is included 
+-- a trace capable debugger. I use Segger Ozone, which is included 
 with J-Trace, or it is free for non-commercial use.
 
 -- you have to allocate from two to five pins for the trace port. I have
@@ -203,8 +228,8 @@ always used the full five pins.
 chip to the connector should be laid out with high speed signalling in
 mind. In theory, it might be possible to wire a trace probe to I/O pins
 of a Nucleo board, but I would not expect this to work well at fast
-clock rates. Though the H503 can run up to 250 MHz, on my board the
-trace becomes flakey above 100 MHz.
+clock rates. Though the H503 can run up to 250 MHz (400 MHz overclocked),
+on my board the trace becomes flakey above 100 MHz.
 
 -- You need to configure the trace pins. There are two ways to do this:
 
@@ -247,3 +272,5 @@ find, and you have to use Dwarf-4 debug info. Newer editions of GCC,
 such as 12.2, emit Dwarf-5 debug data by default, so you have to pass
 -gdwarf-4 to the GCC and G++ compilers.
 
+(There is a new version of Ozone that might support Dwarf-5, but I have not
+tried Dwarf-5 yet).
