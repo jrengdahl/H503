@@ -551,6 +551,14 @@ uint32_t interp(uintptr_t arg)
             dump(&TestStack, sizeof(TestStack));
             }
 
+//              //                              //
+        HELP(  "mem                             display free memory")
+        else if(buf[0]=='m' && buf[1]=='e' && buf[2]=='m')
+            {
+            extern void mem();
+            mem();
+            }
+
         // print the help screen
         else if(buf[0]=='?')
             {
