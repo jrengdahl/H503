@@ -22,7 +22,9 @@ Try findchips.com to search for availability. Often such chips are more
 easily available on a Nucleo board (although the Nucleo boards do not
 have trace connectors).
 
-The spec clock for the H503 is 250 Hz. It seems to run reliably up to 400 MHz.
+The spec clock for the H503 is 250 Hz. It seems to run reliably up to 350
+MHz, and sometimes 400 MHz, at room temperature, and not using all the chip's
+features. YMMV.
 
 
 THE FIRMWARE

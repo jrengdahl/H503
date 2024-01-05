@@ -91,6 +91,7 @@ uint32_t interp(uintptr_t arg)
         {
         const char *p;
 
+        libgomp_reinit();                                                       // reset things in OPenMP such as the default number of threads
         ControlC = false;
         putchar('>');                                                           // output the command line prompt
         fflush(stdout);

@@ -16,6 +16,7 @@
 #define OMP_NUM_THREADS 4
 
 extern void libgomp_init();
+extern void libgomp_reinit();
 
 extern "C" int gomp_get_thread_id();
 

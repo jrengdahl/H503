@@ -22,6 +22,7 @@
 #include "FIFO.hpp"
 #include "libgomp.hpp"
 #include "boundaries.h"
+#include "cyccnt.hpp"
 
 
 // The threads' stacks
@@ -134,6 +135,12 @@ const char *thread_names[] =
     };
 
 
+// clean up and re-initialize between tests
+void libgomp_reinit()
+    {
+    gomp_nthreads_var = OMP_NUM_THREADS;
+    }
+
 // Powerup initialization of libgomp.
 // Must be called after thread and threadFIFO are setup.
 
@@ -177,6 +184,8 @@ void libgomp_init()
             thread_pool.add(&omp_threads[i]);
             }
         }
+
+    libgomp_reinit();
     }
 
 
@@ -358,6 +367,8 @@ void GOMP_critical_end()
             }
         }
     }
+
+
 
 #if 0
 extern "C"
@@ -683,6 +694,18 @@ void GOMP_task (    void (*fn) (void *),
 
 
 
+// set the default number of threads kicked off by "parallel"
+extern "C"
+void omp_set_num_threads(int num)
+    {
+    if(num > OMP_NUM_THREADS)
+        {
+        num = OMP_NUM_THREADS;
+        }
+
+    gomp_nthreads_var = num;
+    }
+
 // return the number of threads in the current team
 extern "C"
 int omp_get_num_threads()
@@ -731,6 +754,19 @@ int omp_get_dynamic(void)
     }
 
 
+// return current time in microseconds
+extern "C"
+double omp_get_wtime(void)
+    {
+    return USEC / 1000000.;
+    }
+
+// return the value of one tick (one microsecond)
+extern "C"
+double omp_get_wtick (void)
+    {
+    return 1.0 / 1000000.;
+    }
 
 // extern "C" int omp_get_num_teams (void);
 // extern "C" int omp_get_team_num (void);
