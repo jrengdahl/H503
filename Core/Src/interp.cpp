@@ -86,6 +86,8 @@ uint32_t interp(uintptr_t arg)
 
     bear();
     printf("hello, world!\n");
+    printf("build: %s %s\n", __DATE__, __TIME__);
+
 
     while(1)
         {
