@@ -103,9 +103,9 @@ void permute(int colors_arg, int balls, int plevel_arg, int verbose_arg)
 
     for(auto &x : output) x = 0;                        // init the output
 
-    #pragma omp parallel num_threads(THREADS)           // kick off the permuter
-    #pragma omp single
-    permuter(input, output, 0, colors*balls);
+    #pragma omp parallel num_threads(THREADS)           // create a team of threads
+    #pragma omp single                                  // one thread
+    permuter(input, output, 0, colors*balls);           //   gets things started
 
     printf("permutations = %d\n", permutations);        // print results
     }

@@ -294,11 +294,15 @@ uint32_t interp(uintptr_t arg)
         HELP(  "clk <freq in MHz>               set CPU clock")
         else if(buf[0]=='c' && buf[1]=='l' && buf[2]=='k')
             {
-            if(isdigit(*p))                     // if an arg is given
+            if(isdigit(*p))                         // if an arg is given
                 {
-                unsigned clk = getdec(&p);      // set the clock freuqnecy to the new value
-                SystemClock_HSI_Config();       // have to deselect the PLL before reprogramming it
-                SystemClock_PLL_Config(clk);    // set the PLL to the new frequency
+                unsigned clk = getdec(&p);          // set the clock frequency to the new value
+                SystemClock_HSI_Config();           // have to deselect the PLL before reprogramming it
+                SystemClock_PLL_Config(clk);        // set the PLL to the new frequency
+
+                // set the TIM2 prescaler to the new frequency so that it always ticks at 1 MHz
+                htim2.Instance->PSC = clk - 1;      // set the prescale value
+                htim2.Instance->EGR = TIM_EGR_UG;   // generate an update event to update the prescaler immediately
                 }
 
             printf("CPU clock is %u MHz\n", CPU_CLOCK_FREQUENCY);
@@ -317,8 +321,8 @@ uint32_t interp(uintptr_t arg)
             uint32_t ticks = 0;
             uint32_t lastTIM2 = 0;
             uint32_t elapsedTIM2 = 0;
-            double last_wtime;
-            double elapsed_wtime;
+            float last_wtime;
+            float elapsed_wtime;
 
             uint64_t count = 1;
 
@@ -335,25 +339,25 @@ uint32_t interp(uintptr_t arg)
             if(size==64)
                 {
                 __disable_irq();
-                last_wtime = omp_get_wtime();
+                last_wtime = omp_get_wtime_float();
                 lastTIM2 = __HAL_TIM_GET_COUNTER(&htim2);
                 Elapsed();
                 bogodelay(count);
                 ticks = Elapsed();
                 elapsedTIM2 = __HAL_TIM_GET_COUNTER(&htim2) - lastTIM2;
-                elapsed_wtime = omp_get_wtime() - last_wtime;
+                elapsed_wtime = omp_get_wtime_float() - last_wtime;
                 __enable_irq();
                 }
             else
                 {
                 __disable_irq();
-                last_wtime = omp_get_wtime();
+                last_wtime = omp_get_wtime_float();
                 lastTIM2 = __HAL_TIM_GET_COUNTER(&htim2);
                 Elapsed();
                 bogodelay((uint32_t)count);
                 ticks = Elapsed();
                 elapsedTIM2 = __HAL_TIM_GET_COUNTER(&htim2) - lastTIM2;
-                elapsed_wtime = omp_get_wtime() - last_wtime;
+                elapsed_wtime = omp_get_wtime_float() - last_wtime;
                 __enable_irq();
                 }
             commas(ticks);

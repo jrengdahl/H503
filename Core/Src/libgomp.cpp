@@ -758,11 +758,21 @@ int omp_get_dynamic(void)
 // This uses the 32-bit TIM2 timer which runs at 1 MHz.
 // It will roll over every 1 hour and 11.5 seconds.
 // TODO -- extend this to 64 bits using an interrupt.
+
 extern "C"
 double omp_get_wtime(void)
     {
     uint32_t ticks = __HAL_TIM_GET_COUNTER(&htim2);
-    return ticks / 1000000.;
+    double fticks = (double)ticks;
+    return fticks / 1000000.;
+    }
+
+extern "C"
+float omp_get_wtime_float(void)
+    {
+    uint32_t ticks = __HAL_TIM_GET_COUNTER(&htim2);
+    float fticks = (float)ticks;
+    return fticks / 1000000.;
     }
 
 // return the value of one tick (one microsecond)
@@ -770,6 +780,13 @@ extern "C"
 double omp_get_wtick (void)
     {
     return 1.0 / 1000000.;
+    }
+
+// return the value of one tick (one microsecond)
+extern "C"
+float omp_get_wtick_float (void)
+    {
+    return 0.000001f;
     }
 
 // extern "C" int omp_get_num_teams (void);
