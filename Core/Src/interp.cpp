@@ -20,6 +20,8 @@
 #include "boundaries.h"
 #include "libgomp.hpp"
 #include "omp.h"
+#include "tim.h"
+
 
 extern void bear();
 extern "C" char *strchrnul(const char *s, int c);   // POSIX function but not included in newlib, see https://linux.die.net/man/3/strchr
@@ -313,6 +315,10 @@ uint32_t interp(uintptr_t arg)
             {
             int size = 32;
             uint32_t ticks = 0;
+            uint32_t lastTIM2 = 0;
+            uint32_t elapsedTIM2 = 0;
+            double last_wtime;
+            double elapsed_wtime;
 
             uint64_t count = 1;
 
@@ -329,21 +335,32 @@ uint32_t interp(uintptr_t arg)
             if(size==64)
                 {
                 __disable_irq();
+                last_wtime = omp_get_wtime();
+                lastTIM2 = __HAL_TIM_GET_COUNTER(&htim2);
                 Elapsed();
                 bogodelay(count);
                 ticks = Elapsed();
+                elapsedTIM2 = __HAL_TIM_GET_COUNTER(&htim2) - lastTIM2;
+                elapsed_wtime = omp_get_wtime() - last_wtime;
                 __enable_irq();
                 }
             else
                 {
                 __disable_irq();
+                last_wtime = omp_get_wtime();
+                lastTIM2 = __HAL_TIM_GET_COUNTER(&htim2);
                 Elapsed();
                 bogodelay((uint32_t)count);
                 ticks = Elapsed();
+                elapsedTIM2 = __HAL_TIM_GET_COUNTER(&htim2) - lastTIM2;
+                elapsed_wtime = omp_get_wtime() - last_wtime;
                 __enable_irq();
                 }
             commas(ticks);
-            printf(" microseconds\n");
+            printf(" microseconds by CYCCNT\n");
+            commas(elapsedTIM2);
+            printf(" microseconds by TIM2\n");
+            printf("%lf microseconds by wtime\n", elapsed_wtime*1000000.0);
             }
 
 

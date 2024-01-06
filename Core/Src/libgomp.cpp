@@ -22,7 +22,7 @@
 #include "FIFO.hpp"
 #include "libgomp.hpp"
 #include "boundaries.h"
-#include "cyccnt.hpp"
+#include "tim.h"
 
 
 // The threads' stacks
@@ -754,11 +754,15 @@ int omp_get_dynamic(void)
     }
 
 
-// return current time in microseconds
+// Return current time as a floating point number in seconds since powerup.
+// This uses the 32-bit TIM2 timer which runs at 1 MHz.
+// It will roll over every 1 hour and 11.5 seconds.
+// TODO -- extend this to 64 bits using an interrupt.
 extern "C"
 double omp_get_wtime(void)
     {
-    return USEC / 1000000.;
+    uint32_t ticks = __HAL_TIM_GET_COUNTER(&htim2);
+    return ticks / 1000000.;
     }
 
 // return the value of one tick (one microsecond)
@@ -771,16 +775,12 @@ double omp_get_wtick (void)
 // extern "C" int omp_get_num_teams (void);
 // extern "C" int omp_get_team_num (void);
 // extern "C" int omp_get_team_size (int);
-
-
 // extern "C" int omp_get_num_procs (void);
 // extern "C" int omp_in_parallel (void);
 // extern "C" void omp_set_nested (int);
 // extern "C" int omp_get_nested (void);
 // extern "C" void omp_init_lock_with_hint (omp_lock_t *, omp_sync_hint_t);
 // extern "C" void omp_init_nest_lock_with_hint (omp_nest_lock_t *, omp_sync_hint_t);
-// extern "C" double omp_get_wtime (void);
-// extern "C" double omp_get_wtick (void);
 // extern "C" void omp_set_schedule (omp_sched_t, int);
 // extern "C" void omp_get_schedule (omp_sched_t *, int *);
 // extern "C" int omp_get_thread_limit (void);

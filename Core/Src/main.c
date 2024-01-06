@@ -20,6 +20,8 @@
 #include "main.h"
 #include "adc.h"
 #include "icache.h"
+#include "memorymap.h"
+#include "tim.h"
 #include "usb.h"
 #include "gpio.h"
 
@@ -104,6 +106,7 @@ int main(void)
   MX_USB_PCD_Init();
   MX_ICACHE_Init();
   MX_ADC1_Init();
+  MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
 
   MX_USB_Device_Init();
@@ -115,6 +118,9 @@ int main(void)
     /* Calibration Error */
     Error_Handler();
     }
+
+  /* start the TIM2, whihc is used for the 1 usec clock */
+  HAL_TIM_Base_Start(&htim2);
 
   extern void background();
   background();
