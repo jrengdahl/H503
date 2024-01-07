@@ -20,6 +20,8 @@
 #include "boundaries.h"
 #include "libgomp.hpp"
 #include "omp.h"
+#include "tim.h"
+
 
 extern void bear();
 extern "C" char *strchrnul(const char *s, int c);   // POSIX function but not included in newlib, see https://linux.die.net/man/3/strchr
@@ -86,11 +88,14 @@ uint32_t interp(uintptr_t arg)
 
     bear();
     printf("hello, world!\n");
+    printf("build: %s %s\n", __DATE__, __TIME__);
+
 
     while(1)
         {
         const char *p;
 
+        libgomp_reinit();                                                       // reset things in OPenMP such as the default number of threads
         ControlC = false;
         putchar('>');                                                           // output the command line prompt
         fflush(stdout);
@@ -289,11 +294,15 @@ uint32_t interp(uintptr_t arg)
         HELP(  "clk <freq in MHz>               set CPU clock")
         else if(buf[0]=='c' && buf[1]=='l' && buf[2]=='k')
             {
-            if(isdigit(*p))                     // if an arg is given
+            if(isdigit(*p))                         // if an arg is given
                 {
-                unsigned clk = getdec(&p);      // set the clock freuqnecy to the new value
-                SystemClock_HSI_Config();       // have to deselect the PLL before reprogramming it
-                SystemClock_PLL_Config(clk);    // set the PLL to the new frequency
+                unsigned clk = getdec(&p);          // set the clock frequency to the new value
+                SystemClock_HSI_Config();           // have to deselect the PLL before reprogramming it
+                SystemClock_PLL_Config(clk);        // set the PLL to the new frequency
+
+                // set the TIM2 prescaler to the new frequency so that it always ticks at 1 MHz
+                htim2.Instance->PSC = clk - 1;      // set the prescale value
+                htim2.Instance->EGR = TIM_EGR_UG;   // generate an update event to update the prescaler immediately
                 }
 
             printf("CPU clock is %u MHz\n", CPU_CLOCK_FREQUENCY);
@@ -310,6 +319,10 @@ uint32_t interp(uintptr_t arg)
             {
             int size = 32;
             uint32_t ticks = 0;
+            uint32_t lastTIM2 = 0;
+            uint32_t elapsedTIM2 = 0;
+            float last_wtime;
+            float elapsed_wtime;
 
             uint64_t count = 1;
 
@@ -326,21 +339,32 @@ uint32_t interp(uintptr_t arg)
             if(size==64)
                 {
                 __disable_irq();
+                last_wtime = omp_get_wtime_float();
+                lastTIM2 = __HAL_TIM_GET_COUNTER(&htim2);
                 Elapsed();
                 bogodelay(count);
                 ticks = Elapsed();
+                elapsedTIM2 = __HAL_TIM_GET_COUNTER(&htim2) - lastTIM2;
+                elapsed_wtime = omp_get_wtime_float() - last_wtime;
                 __enable_irq();
                 }
             else
                 {
                 __disable_irq();
+                last_wtime = omp_get_wtime_float();
+                lastTIM2 = __HAL_TIM_GET_COUNTER(&htim2);
                 Elapsed();
                 bogodelay((uint32_t)count);
                 ticks = Elapsed();
+                elapsedTIM2 = __HAL_TIM_GET_COUNTER(&htim2) - lastTIM2;
+                elapsed_wtime = omp_get_wtime_float() - last_wtime;
                 __enable_irq();
                 }
             commas(ticks);
-            printf(" microseconds\n");
+            printf(" microseconds by CYCCNT\n");
+            commas(elapsedTIM2);
+            printf(" microseconds by TIM2\n");
+            printf("%lf microseconds by wtime\n", elapsed_wtime*1000000.0);
             }
 
 

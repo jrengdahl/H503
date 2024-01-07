@@ -1,6 +1,9 @@
 // Copyright (c) 2009, 2023 Jonathan Engdahl
 // BSD license -- see the accompanying README.txt
 
+// This file contains definitions related to the underlying implementation of OpenMP.
+// Applications that *use* OpenMP should not need this file.
+
 #ifndef LIBGOMP_H
 #define LIBGOMP_H
 
@@ -16,6 +19,7 @@
 #define OMP_NUM_THREADS 4
 
 extern void libgomp_init();
+extern void libgomp_reinit();
 
 extern "C" int gomp_get_thread_id();
 

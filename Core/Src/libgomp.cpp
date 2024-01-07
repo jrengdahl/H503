@@ -22,6 +22,7 @@
 #include "FIFO.hpp"
 #include "libgomp.hpp"
 #include "boundaries.h"
+#include "tim.h"
 
 
 // The threads' stacks
@@ -134,6 +135,12 @@ const char *thread_names[] =
     };
 
 
+// clean up and re-initialize between tests
+void libgomp_reinit()
+    {
+    gomp_nthreads_var = OMP_NUM_THREADS;
+    }
+
 // Powerup initialization of libgomp.
 // Must be called after thread and threadFIFO are setup.
 
@@ -177,6 +184,8 @@ void libgomp_init()
             thread_pool.add(&omp_threads[i]);
             }
         }
+
+    libgomp_reinit();
     }
 
 
@@ -358,6 +367,8 @@ void GOMP_critical_end()
             }
         }
     }
+
+
 
 #if 0
 extern "C"
@@ -683,6 +694,18 @@ void GOMP_task (    void (*fn) (void *),
 
 
 
+// set the default number of threads kicked off by "parallel"
+extern "C"
+void omp_set_num_threads(int num)
+    {
+    if(num > OMP_NUM_THREADS)
+        {
+        num = OMP_NUM_THREADS;
+        }
+
+    gomp_nthreads_var = num;
+    }
+
 // return the number of threads in the current team
 extern "C"
 int omp_get_num_threads()
@@ -731,20 +754,50 @@ int omp_get_dynamic(void)
     }
 
 
+// Return current time as a floating point number in seconds since powerup.
+// This uses the 32-bit TIM2 timer which runs at 1 MHz.
+// It will roll over every 1 hour and 11.5 seconds.
+// TODO -- extend this to 64 bits using an interrupt.
+
+extern "C"
+double omp_get_wtime(void)
+    {
+    uint32_t ticks = __HAL_TIM_GET_COUNTER(&htim2);
+    double fticks = (double)ticks;
+    return fticks / 1000000.;
+    }
+
+extern "C"
+float omp_get_wtime_float(void)
+    {
+    uint32_t ticks = __HAL_TIM_GET_COUNTER(&htim2);
+    float fticks = (float)ticks;
+    return fticks / 1000000.;
+    }
+
+// return the value of one tick (one microsecond)
+extern "C"
+double omp_get_wtick (void)
+    {
+    return 1.0 / 1000000.;
+    }
+
+// return the value of one tick (one microsecond)
+extern "C"
+float omp_get_wtick_float (void)
+    {
+    return 0.000001f;
+    }
 
 // extern "C" int omp_get_num_teams (void);
 // extern "C" int omp_get_team_num (void);
 // extern "C" int omp_get_team_size (int);
-
-
 // extern "C" int omp_get_num_procs (void);
 // extern "C" int omp_in_parallel (void);
 // extern "C" void omp_set_nested (int);
 // extern "C" int omp_get_nested (void);
 // extern "C" void omp_init_lock_with_hint (omp_lock_t *, omp_sync_hint_t);
 // extern "C" void omp_init_nest_lock_with_hint (omp_nest_lock_t *, omp_sync_hint_t);
-// extern "C" double omp_get_wtime (void);
-// extern "C" double omp_get_wtick (void);
 // extern "C" void omp_set_schedule (omp_sched_t, int);
 // extern "C" void omp_get_schedule (omp_sched_t *, int *);
 // extern "C" int omp_get_thread_limit (void);

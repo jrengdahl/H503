@@ -22,7 +22,7 @@ inline bool COMPILER_BARRIER()
 #define __FLATTEN __attribute__((__flatten__))
 #define __NAKED __attribute__((__naked__))
 #ifndef __NOINLINE
-#define __NOINLINE __attribute__((__noinline__))
+#define __NOINLINE __attribute__ ( (noinline) )
 #endif
 
 #define __LENGTH(x) (sizeof(x)/sizeof(x[0]))
