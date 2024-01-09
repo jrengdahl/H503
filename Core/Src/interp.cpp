@@ -339,25 +339,25 @@ uint32_t interp(uintptr_t arg)
             if(size==64)
                 {
                 __disable_irq();
-                last_wtime = omp_get_wtime_float();
+                last_wtime = omp_get_wtime(0);
                 lastTIM2 = __HAL_TIM_GET_COUNTER(&htim2);
                 Elapsed();
                 bogodelay(count);
                 ticks = Elapsed();
                 elapsedTIM2 = __HAL_TIM_GET_COUNTER(&htim2) - lastTIM2;
-                elapsed_wtime = omp_get_wtime_float() - last_wtime;
+                elapsed_wtime = omp_get_wtime(0) - last_wtime;
                 __enable_irq();
                 }
             else
                 {
                 __disable_irq();
-                last_wtime = omp_get_wtime_float();
+                last_wtime = omp_get_wtime(0);
                 lastTIM2 = __HAL_TIM_GET_COUNTER(&htim2);
                 Elapsed();
                 bogodelay((uint32_t)count);
                 ticks = Elapsed();
                 elapsedTIM2 = __HAL_TIM_GET_COUNTER(&htim2) - lastTIM2;
-                elapsed_wtime = omp_get_wtime_float() - last_wtime;
+                elapsed_wtime = omp_get_wtime(0) - last_wtime;
                 __enable_irq();
                 }
             commas(ticks);

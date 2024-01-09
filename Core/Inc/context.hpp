@@ -59,12 +59,22 @@
 #include <stdint.h>
 #include "cmsis.h"
 
+// Save Context
+// Saves the interrupt state in ip.
+// Disables interrupts.
+// Save the current running thread in its Context object, which is pointed to by r9.
+// The saved registers include the interrupt state and the SP.
 #define STORE_CONTEXT                           \
 "   mrs     ip, primask                 \n"     \
 "   cpsid   i                           \n"     \
 "   stm     r9, {r4-r8, r10-ip, lr}     \n"     \
 "   str     sp, [r9, #36]               \n"
 
+
+// Load Context
+// Loads a thread from its context object, which is pointed to by r9.
+// The loaded registes include the SP and the interrupt state in ip.
+// Restores the saved interrupt state.
 #define LOAD_CONTEXT                            \
 "   ldm     r9, {r4-r8, r10-ip, lr}     \n"     \
 "   ldr     sp, [r9, #36]               \n"     \

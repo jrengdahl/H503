@@ -775,16 +775,29 @@ float omp_get_wtime_float(void)
     return fticks / 1000000.;
     }
 
+float omp_get_wtime(int __attribute__((__unused__)))
+    {
+    uint32_t ticks = __HAL_TIM_GET_COUNTER(&htim2);
+    float fticks = (float)ticks;
+    return fticks / 1000000.;
+    }
+
 // return the value of one tick (one microsecond)
 extern "C"
 double omp_get_wtick (void)
     {
-    return 1.0 / 1000000.;
+    return 0.000001;
     }
 
 // return the value of one tick (one microsecond)
 extern "C"
 float omp_get_wtick_float (void)
+    {
+    return 0.000001f;
+    }
+
+// return the value of one tick (one microsecond)
+float omp_get_wtick(int __attribute__((__unused__)))
     {
     return 0.000001f;
     }

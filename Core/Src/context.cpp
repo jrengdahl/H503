@@ -18,20 +18,20 @@
 #include "cmsis.h"
 
 
-// Suspend the current thread into a Thread object,
-// pop the next thread from the pending stack into the
+// Suspend the current thread into the Context object pointed to by r0,
+// pop the next thread from the ready chain into the
 // register set, and resume running it.
 __NOINLINE
 __NAKED
 void Context::suspend()
     {
     __asm__ __volatile__(
-    STORE_CONTEXT                                   // save the CPU registers to the current thread struct
+    STORE_CONTEXT                                   // save the CPU registers to the current context struct
 "   mov     r3, r9                      \n"         // unlink current context from the ready chain
-"   ldr     r9, [r3, #40]               \n"         // point r9 to the "next" pointer of the old thread
+"   ldr     r9, [r3, #40]               \n"         // load r9 from the "next" pointer of the old thread
     );
 
-    suspend_switch();
+    suspend_switch();                               // call the next step. This is needed for Ozone's RTOS awareness.
     }
 
 __NOINLINE
@@ -45,19 +45,19 @@ void Context::suspend_switch()
     }
 
 
-// Push the current thread onto the pending chain, and
-// resume the first thread in a chain
+// Push the current context onto the ready chain, and
+// resume the context pointed to by r0
 __NOINLINE
 __NAKED
 void Context::resume()
     {
     __asm__ __volatile__(
-    STORE_CONTEXT
-"   str     r9, [r0, #40]               \n"         // save r9 to the "next" pointer of the new thread
-"   mov     r9, r0                      \n"         // the new thread becomes the head of the ready chain
+    STORE_CONTEXT                                   // save the old context to the current context object
+"   str     r9, [r0, #40]               \n"         // save r9 to the "next" pointer of the new context
+"   mov     r9, r0                      \n"         // the new context becomes the head of the ready chain
     );
 
-    this->resume_switch();
+    this->resume_switch();                          // call the next step. This is needed for Ozone's RTOS awareness.
     }
 
 __NOINLINE
@@ -65,7 +65,7 @@ __NAKED
 void Context::resume_switch()
     {
     __asm__ __volatile__(
-    LOAD_CONTEXT                                    // load the new thread into the CPU registers
+    LOAD_CONTEXT                                    // load the new context into the CPU registers
 "   bx      lr                          \n"
     );
     }
@@ -99,12 +99,12 @@ void Context::start(THREADFN *fn, char *newsp, uintptr_t arg)
     (void)arg;
 
     __asm__ __volatile__(
-    STORE_CONTEXT
-"   str     r9, [r0, #40]               \n"
-"   mov     r9, r0                      \n"         // link the new context onto the head of the ready chain
+    STORE_CONTEXT                                   // save the calling context into its thread object
+"   str     r9, [r0, #40]               \n"         // point the new object to the rest of the ready chain
+"   mov     r9, r0                      \n"         // the new context becomes the head of the ready chain
     );
 
-    start_switch1();
+    start_switch1();                                // call the next step. This is required for Ozone's RTOS awareness.
     }
 
 __NOINLINE
@@ -132,7 +132,7 @@ void Context::start_switch1()
 "   ldr     r9, [r3, #40]               \n"
     );
 
-    start_switch2();
+    start_switch2();                                // call the next step. This is required for Ozone's RTOS awareness.
     }
 
 __NOINLINE
