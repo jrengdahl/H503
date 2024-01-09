@@ -18,7 +18,7 @@
 #include "cmsis.h"
 
 
-// Suspend the current thread into the Context object pointed to by r0,
+// Suspend the current thread into its Context object pointer to by r9,
 // pop the next thread from the ready chain into the
 // register set, and resume running it.
 __NOINLINE

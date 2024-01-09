@@ -146,7 +146,23 @@ class Context
         return stack[N-4] == 1;
         }
 
+
+    // get a pointer to the current context
+    static Context *pointer()
+        {
+        Context *r9;
+
+        __asm__ __volatile__(
+                "   mov %[r9], r9"           // fetch r9, probably into r0
+                : [r9]"=r"(r9)
+                :
+                :
+                );
+        return r9;
+        }
+
     };
+
 
 
 
