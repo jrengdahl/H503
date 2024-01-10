@@ -80,7 +80,11 @@ void background()                                       // powerup init and back
         while(1)                                        // run the background polling loop
             {
             gomp_poll_threads();                        // wake any OpenMP threads that have work to do
-            undefer();                                  // wake any threads that may have called yield
+
+            if(DeferFIFO)                               // if anything on the DeferFIFO
+                {
+                undefer();                              // wake any threads that called yield
+                }
             }
         }
     else if(omp_get_thread_num() == 1)                  // and thread 1 runs this:

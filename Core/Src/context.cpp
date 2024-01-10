@@ -17,6 +17,19 @@
 #include <stdint.h>
 #include "cmsis.h"
 
+// NOTE NOTE NOTE !!!
+// NOTE NOTE NOTE !!!
+// NOTE NOTE NOTE !!!
+
+// This file must be compiled with the option
+// -fno-toplevel-reorder
+// This is so that suspend drops through to suspend-switch, and
+// resume drops through to resume-switch.
+
+// NOTE NOTE NOTE !!!
+// NOTE NOTE NOTE !!!
+// NOTE NOTE NOTE !!!
+
 
 // Suspend the current thread into its Context object pointer to by r9,
 // pop the next thread from the ready chain into the
@@ -27,11 +40,11 @@ void Context::suspend()
     {
     __asm__ __volatile__(
     STORE_CONTEXT                                   // save the CPU registers to the current context struct
-"   mov     r3, r9                      \n"         // unlink current context from the ready chain
-"   ldr     r9, [r3, #40]               \n"         // load r9 from the "next" pointer of the old thread
+"   ldr     r9, [r9, #40]               \n"         // load r9 from the "next" pointer of the old thread
     );
 
-    suspend_switch();                               // call the next step. This is needed for Ozone's RTOS awareness.
+//    suspend_switch();                             // call the next step. This is needed for Ozone's RTOS awareness.
+//                                                  // the preceding line is commented out for drop through optimization
     }
 
 __NOINLINE
@@ -57,7 +70,8 @@ void Context::resume()
 "   mov     r9, r0                      \n"         // the new context becomes the head of the ready chain
     );
 
-    this->resume_switch();                          // call the next step. This is needed for Ozone's RTOS awareness.
+//    this->resume_switch();                        // call the next step. This is needed for Ozone's RTOS awareness.
+//                                                  // the preceding line is commented out for drop through optimization
     }
 
 __NOINLINE
@@ -143,6 +157,12 @@ void Context::start_switch2()
     LOAD_CONTEXT
 "   bx      lr                          \n"
     );
+
+// This code is never reached.
+// Insert dummy calls here to prevent these function from being optimized away.
+// These functions are never called, they are entered by drop-through, for optimization
+    suspend_switch();                               // call the next step. This is needed for Ozone's RTOS awareness.
+    this->resume_switch();                          // call the next step. This is needed for Ozone's RTOS awareness.
     }
 
 

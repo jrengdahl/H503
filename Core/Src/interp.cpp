@@ -425,31 +425,69 @@ uint32_t interp(uintptr_t arg)
             Context *ctx = Context::pointer();      // get the context pointer for thread 0
             unsigned count = getdec(&p);            // get the number of iterations
             unsigned i = count;
-            float start;
-            float ticks;
+            float start = 0;
+            float ticks = 0;
+
+            start = omp_get_wtime_float();
 
             #pragma omp parallel num_threads(2)
             if(omp_get_thread_num() == 0)
                 {
-                start = omp_get_wtime_float();
                 while(i)
                     {
                     Context::suspend();
+                    Context::suspend();
+                    Context::suspend();
+                    Context::suspend();
+                    Context::suspend();
+                    Context::suspend();
+                    Context::suspend();
+                    Context::suspend();
+                    Context::suspend();
+                    Context::suspend();
+                    Context::suspend();
+                    Context::suspend();
+                    Context::suspend();
+                    Context::suspend();
+                    Context::suspend();
+                    Context::suspend();
+                    Context::suspend();
+                    Context::suspend();
+                    Context::suspend();
+                    Context::suspend();
                     }
-                ticks = omp_get_wtime_float() - start;
                 }
             else
                 {
-                //yield();
-
                 while(i)
                     {
-                    ctx->resume();
                     --i;
+                    ctx->resume();
+                    ctx->resume();
+                    ctx->resume();
+                    ctx->resume();
+                    ctx->resume();
+                    ctx->resume();
+                    ctx->resume();
+                    ctx->resume();
+                    ctx->resume();
+                    ctx->resume();
+                    ctx->resume();
+                    ctx->resume();
+                    ctx->resume();
+                    ctx->resume();
+                    ctx->resume();
+                    ctx->resume();
+                    ctx->resume();
+                    ctx->resume();
+                    ctx->resume();
+                    ctx->resume();
                     }
                 }
 
-             printf("\n%f ns per iteration\n", ticks/(count*2000));
+            ticks = omp_get_wtime_float() - start;
+
+            printf("\n%lf nsec\n", ticks*1000000000.0/(count*40));
              }
 
 
