@@ -57,6 +57,7 @@ struct omp_thread
     unsigned single = 0;    // used to detect the first thread to arrive at a "single"
     bool arrived = false;   // arrived at a barrier, waiting for other threads to arrive
     bool mwaiting = false;  // waiting on a mutex
+    bool twaiting = false;   // indicates when a thread is waiting for a task. Not affected by wait for event, etc.
 
     // stuff pertaining to this thread as a team master
     int team_count = 0;
@@ -103,5 +104,9 @@ void libgomp_start_thread(omp_thread &thread, THREADFN *code, char (&stack)[N], 
     thread.stack_high = &stack[N];
     thread.context.spawn(code, stack, arg);
     }
+
+// called by background to poll all the threads and resume them if they have something to do
+extern void gomp_poll_threads();
+
 
 #endif // LIBGOMP_H

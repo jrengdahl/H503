@@ -73,7 +73,7 @@
 
 // Load Context
 // Loads a thread from its context object, which is pointed to by r9.
-// The loaded registes include the SP and the interrupt state in ip.
+// The loaded registers include the SP and the interrupt state in ip.
 // Restores the saved interrupt state.
 #define LOAD_CONTEXT                            \
 "   ldm     r9, {r4-r8, r10-ip, lr}     \n"     \

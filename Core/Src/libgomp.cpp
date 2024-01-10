@@ -98,9 +98,14 @@ void run_explicit(task *task)
 
 static uint32_t gomp_worker(uintptr_t id)
     {
+    omp_thread &thread = *omp_this_thread();
+
     while(true)
         {
-        omp_thread &thread = *omp_this_thread();
+        thread.twaiting = true;
+        Context::suspend();
+        thread.twaiting = false;
+
         omp_thread &team = *omp_this_team();
         task *task;
 
@@ -112,11 +117,26 @@ static uint32_t gomp_worker(uintptr_t id)
             {
             run_explicit(task);
             }
-
-        yield();
         }
 
     return 0;
+    }
+
+
+// called by background to poll all the threads and resume them if they have something to do
+void gomp_poll_threads()
+    {
+    for(auto &thread: omp_threads)
+        {
+        omp_thread *team = thread.team_id == 0 ? &thread : thread.team;
+
+        if(thread.twaiting
+        && (   thread.task
+            || team->task_list))
+            {
+            thread.context.resume();
+            }
+        }
     }
 
 
@@ -169,7 +189,7 @@ void libgomp_init()
             :
             );
 
-            omp_threads[i].team = (omp_thread *)0xFFFFFFFF;         // must never be used, since background cannot be a member of a team
+            omp_threads[i].team = (omp_thread *)0xFFFFFFFF;         // background's team pointer must never be used, since background cannot be a member of a team
             omp_threads[i].stack_low = (char *)&_stack_start;
             omp_threads[i].stack_high = (char *)&_stack_end;
             }

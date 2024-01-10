@@ -79,6 +79,7 @@ void background()                                       // powerup init and back
         {
         while(1)                                        // run the background polling loop
             {
+            gomp_poll_threads();                        // wake any OpenMP threads that have work to do
             undefer();                                  // wake any threads that may have called yield
             }
         }
