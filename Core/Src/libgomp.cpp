@@ -106,16 +106,19 @@ static uint32_t gomp_worker(uintptr_t id)
         Context::suspend();
         thread.twaiting = false;
 
-        omp_thread &team = *omp_this_team();
         task *task;
 
         if((task=thread.task) != 0)
             {
             run_implicit(task);
             }
-        else if(team.task_list.take(task))         // if there are any explicit tasks waiting for a context
+        else
             {
-            run_explicit(task);
+            omp_thread &team = *omp_this_team();
+            if(team.task_list.take(task))         // if there are any explicit tasks waiting for a context
+                {
+                run_explicit(task);
+                }
             }
         }
 
@@ -128,13 +131,21 @@ void gomp_poll_threads()
     {
     for(auto &thread: omp_threads)
         {
-        omp_thread *team = thread.team_id == 0 ? &thread : thread.team;
-
-        if(thread.twaiting
-        && (   thread.task
-            || team->task_list))
+        if(thread.twaiting)
             {
-            thread.context.resume();
+            if(thread.task)
+                {
+                thread.context.resume();
+                }
+            else
+                {
+                omp_thread *team = thread.team_id == 0 ? &thread : thread.team;
+
+                if(team->task_list)
+                    {
+                    thread.context.resume();
+                    }
+                }
             }
         }
     }
