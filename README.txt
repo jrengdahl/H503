@@ -1,8 +1,8 @@
 STM32H503RB test board and firmware
 
 This project includes a small OSHPark board for the new H503
-microcontroller from ST MIcro, and firmware to run on the board.
-The firmware includes OpenMP support for this bare metal microcontroller.
+microcontroller from ST MIcro, and firmware to run on the board. The
+firmware includes OpenMP support for this bare metal microcontroller.
 
 
 THE CHIP
@@ -16,15 +16,15 @@ The STM32H503 is a low-end microcontroller by ST Microelectronics:
 -- ETM trace port
 
 When this chip first became available in early March of 2023, it was in
-stock at Mouser for $4.33, and I was able to obtain a few. More recently
-I see that they are out of stock with availability nearly a year out.
-Try findchips.com to search for availability. Often such chips are more
-easily available on a Nucleo board (although the Nucleo boards do not
-have trace connectors).
+stock at Mouser for $4.33, and I was able to obtain a few. As of March
+2024 they are available in small quantities from Digikey, directly from
+ST Micro, and some other suppliers. Try findchips.com to search for
+availability. Often such chips are more easily available on a Nucleo
+board (although the Nucleo boards do not have trace connectors).
 
-The spec clock for the H503 is 250 Hz. It seems to run reliably up to 350
-MHz, and sometimes 400 MHz, at room temperature, and not using all the chip's
-features. YMMV.
+The spec clock for the H503 is 250 Hz. It seems to run reliably up to
+350 MHz, and sometimes 400 MHz, at room temperature, and not using all
+the chip's features. YMMV.
 
 
 THE FIRMWARE
@@ -49,7 +49,7 @@ a simple command line interpeter with the following commands:
 -- dump the thread stacks
 -- display the state of the free memory system
 -- run various OpenMP tests
--- set the debug verbodity level
+-- set the debug verbosity level
 -- print the help
 
 The command line processor is simple and easily expanded with new commands.
@@ -75,8 +75,8 @@ I usually write bare metal firmware, with no OS or RTOS, but I use a
 simple non-preemptive threading system, which enables me to architect a
 system as a set of cooperating processes. As the concept developed over
 many years it has gone by the name of "wait-wake", "plastic fork", and
-"not-an-OS", but currently goes by the name of "Bear Metal Threads".
-Its characteristics include:
+"not-an-OS", but currently goes by the name of "Bear Metal Threads". Its
+characteristics include:
 
 -- very small: the code that gets used at runtime consists of 23 ASM
    instructions. There is a little more for creating threads at powerup. 
@@ -179,6 +179,15 @@ All the small commodity parts are located on the bottom side and are
 soldered by JLCPCB. The CPU, connectors, and a couple parts that are
 not sourced by JLCPCB are on the top side and have to be hand soldered.
 
+The directory H503-0.1.oshpark contains the KiCad files that were used
+for the OSHPark board. The directory H503-0.2.jlcpcb contains the KiCad
+files for the JLCPCB board. The "production" subdirectory contains the
+zip file that was uploaded to JLCPCB, including the BOM and
+pick-and-place files. The directory H503-0.3 contains a slight
+modification to the H503-0.2 board layout; mainly, the oscillator
+footprint uses larger pads to make it easier to solder by hand. (I have
+not had the 0.3 board built yet).
+
 
 TRACE
 
@@ -274,5 +283,16 @@ find, and you have to use Dwarf-4 debug info. Newer editions of GCC,
 such as 12.2, emit Dwarf-5 debug data by default, so you have to pass
 -gdwarf-4 to the GCC and G++ compilers.
 
-(There is a new version of Ozone that might support Dwarf-5, but I have not
-tried Dwarf-5 yet).
+The newer version of Ozone supports Dwarf-5, but I have not tried
+Dwarf-5 yet.
+
+
+JLINK
+
+There is an alternate H503-edu.jdebug file that works with a non-trace
+Jlink. The J-link Edu comes with a 10-pin high density conector that
+will work with this board if you install a 10 pin connector (or cut half
+the pins from the 20-pin connector). Jlink EDU is $60 at
+https://shop-us.segger.com/product/j-link-edu-mini-8-08-91 or
+at Mouser or Digikey.
+

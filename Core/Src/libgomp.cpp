@@ -129,21 +129,23 @@ static uint32_t gomp_worker(uintptr_t id)
 // called by background to poll all the threads and resume them if they have something to do
 void gomp_poll_threads()
     {
-    for(auto &thread: omp_threads)
+    for(int i=1; i<GOMP_MAX_NUM_THREADS; i++)
         {
-        if(thread.twaiting)
+        omp_thread *thread = &omp_threads[i];
+
+        if(thread->twaiting)
             {
-            if(thread.task)
+            if(thread->task)
                 {
-                thread.context.resume();
+                thread->context.resume();
                 }
             else
                 {
-                omp_thread *team = thread.team_id == 0 ? &thread : thread.team;
+                omp_thread *team = thread->team_id == 0 ? thread : thread->team;
 
                 if(team->task_list)
                     {
-                    thread.context.resume();
+                    thread->context.resume();
                     }
                 }
             }

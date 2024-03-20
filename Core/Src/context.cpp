@@ -1,21 +1,20 @@
-// Thread.cpp
-// Implementation of the Thread class.
+// Context.cpp
+// Implementation of the Context class.
 
-// Copyright (c) 2023 Jonathan Engdahl
+// Copyright (c) 2023-2024 Jonathan Engdahl
 // BSD license -- see the accompanying LICENSE file
+
+// This file deals with the Context only. The OpenMP thread
+// includes a Context at the beginning of the thread object.
 
 
 // Loading or storing the sp using ldr or str generates the warning:
 // "This instruction may be unpredictable if executed on M-profile cores with interrupts enabled."
-// Since the instructions below which trigger this warning are executed with interrupts off,
-// it is safe to ignore the warning. You can add the option:
+// Since the instructions below which trigger this warning are guaranteed to be executed with
+// interrupts off, it is safe to ignore the warning. You can add the option:
 // "-Wa,--no-warn", TO THIS FILE ONLY
 // to suppress the assembler warning. I recommend that you remove that option if you make any
 // changes to this module, until you have tested the changes.
-
-#include <context.hpp>
-#include <stdint.h>
-#include "cmsis.h"
 
 // NOTE NOTE NOTE !!!
 // NOTE NOTE NOTE !!!
@@ -23,15 +22,46 @@
 
 // This file must be compiled with the option
 // -fno-toplevel-reorder
-// This is so that suspend drops through to suspend-switch, and
-// resume drops through to resume-switch.
+// This is to ensure that "suspend" drops through to "suspend-switch", and
+// "resume" drops through to "resume-switch". This can be done by right
+// clicking THIS FILE in the Eclipse Project Explorer, selecting
+// Properties -> C/C++ Build -> Settings -> Tool Settings -> Miscellaneous
+// and adding "-fno-toplevel-reorder" to the list of options.
 
 // NOTE NOTE NOTE !!!
 // NOTE NOTE NOTE !!!
 // NOTE NOTE NOTE !!!
 
 
-// Suspend the current thread into its Context object pointer to by r9,
+
+// The suspend and resume routines have some additional complications to support RTOS-awareness
+// in the Ozone debugger. Ozone requires there to be a subroutine call that causes a context switch.
+// When Ozone sees this subroutine being called it knows not to nest the Timeline display.
+// Each context-switching subroutines is identified to Ozone via the (e.g. for "suspend_switch")
+// OS.AddContextSwitchSymbol("Context::suspend_switch"); line in the project file (.jdebug).
+
+// In order to accomodate this, initially a dummy call was introduced in the middle of each context
+// switching routine. Later, I figured out that the the call instruction itself was unnecessary, but
+// the entry point had to exist. For each routine e.g. "function", the name of the context switching
+// point is named "function_switch". In the case of start, which contains two context switches,
+// the dummy entry points are named "start_switch1" and "start_switch2". It is possible to comment
+// out the actual call to function_switch and let function drop through to function_switch. In order
+// to accomplish this, three things are needed:
+// -- "function_switch" must immediatley follow "function"
+// -- this file must be compiled with the option  -fno-toplevel-reorder so that the linker does not
+//    move "function_switch" relative to "function".
+// -- every function that is dropped into must have a dummy call somewhere, so that the optimizer
+//    does not delete it. These dummy calls have been placed after the "bx lr" in "start".
+// Note that the switch routines in start have not been optimized, since start is called infrequently.
+
+
+#include <context.hpp>
+#include <stdint.h>
+#include "cmsis.h"
+
+
+
+// Suspend the current thread into its Context object pointed to by r9,
 // pop the next thread from the ready chain into the
 // register set, and resume running it.
 __NOINLINE
