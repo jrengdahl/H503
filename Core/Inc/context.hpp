@@ -2,15 +2,20 @@
 
 // A simple but very fast threading system for bare metal ARM processors.
 //
-// Copyright (c) 2023 Jonathan Engdahl
+// Copyright (c) 2023-2024 Jonathan Engdahl
 // BSD license -- see the accompanying LICENSE file
 //
 //
 // A thread is represented by its non-volatile registers.
+// The r9 register points to the current Context object, where the running Context was loaded from,
+// and where it will besaved when it is n longer running.
+// Contexts can be chained via their "next" pointer. Typically r9 points to a chain of Contexts.
+// The last Context in this chain is the background, which MUST NEVER suspend itself.
+
 // A thread can be in one of three states;
 // -- running: it currently is running on the CPU and its state is contained in the CPU registers.
 // -- suspended: the thread is saved in a Context object, and is waiting to be resumed. A thread in this
-//    state is typically waiting for an event.
+//    state is typically waiting for an event, or waiting to be started as part of a team of OpenMP threads.
 // -- pending: a thread that has resumed another thread has its state pushed on the pending context stack.
 //    A thread in this state is waiting for a running thread to suspend itself.
 //
@@ -28,29 +33,32 @@
 //    reference to an array of char. In this way the templated functions can determine the stack size,
 //    whereas if a pointer were passed the size information would be lost.
 //
-// Multiple threads can be running virtually concurrently on a single CPU. In actuality, virtually
-// concurrent threads run serially. Multiple threads can actually run concurrently on multiple cores.
+// Multiple threads can be running virtually concurrently on each CPU. In actuality, virtually
+// concurrent threads run serially -- whenever the running thread enters the suspended or pending state,
+// another thread takes over, until it too suspends or pends. However, on a multi-core system multiple
+// threads can actually run concurrently.
 //
 // Memory available to a thread is either local (stack) or globally shared with all other threads.
 // This implementation does not provide thread-private static memory. On single and multi-core systems
 // the threads share the same address space. It is assumed that the address space is coherent (all
 // threads see the same content for all addresses, regardless of cacheing or which core they are on).
 //
-// This implementation stores the thread stack pointer (points to a stack of pending threads, not to be
-// confused with the normal sp) in r9. This removes one more register from the pool allocatable by the
+// This implementation stores the thread chain pointer (points to a linked list of pending threads, not to
+// be confused with the normal sp) in r9. This removes one more register from the pool allocatable by the
 // compiler, but has the following significant benefit:
 // -- the thread switching code becomes much faster and simpler.
 // -- the compiler requires fewer registers to implement a context switch, thus the threadFIFO algorithm
 //    can be implemented using only the five volatile registers. This greatly simplifies the threadFIFO
 //    suspend and resume routines.
+// -- Threads can access variables in the current OpenMP omp_thread object with one ldr or str instruction.
 // 
-// Excluding the subroutine call and return, a thread switch costs only four instructions. On a 500 MHz
-// CPU this would be 40 nanoseconds. Compare this to 10 microseconds for a thread switch on a preemptive
-// RTOS. Obviously, a fully preemptive, prioritized, time-sliced RTOS has its advantages, but where sheer
+// Non-preemptive thread switch is very fast -- A thread switch takes 300 ns on a 100 MHz Cortex-M33.
+// Obviously, a fully preemptive, prioritized, time-sliced RTOS has its advantages, but where sheer
 // performance outweighs these advantages, a non-preemtive system such as this is necessary. The other
 // alternative would be to implement the firmware as a complex state machine, but 45 years experience coding
 // real-time firmware has convinced me that a set of cooperating threads are much easier to design, implement,
 // and debug than a huge single-threaded state machine.
+
 
 
 #ifndef CONTEXT_H
@@ -59,12 +67,22 @@
 #include <stdint.h>
 #include "cmsis.h"
 
+// Save Context
+// Saves the interrupt state in ip.
+// Disables interrupts, this is important while the stacks are being swapped.
+// Save the current running thread in its Context object, which is pointed to by r9.
+// The saved registers include the interrupt state and the SP.
 #define STORE_CONTEXT                           \
 "   mrs     ip, primask                 \n"     \
 "   cpsid   i                           \n"     \
 "   stm     r9, {r4-r8, r10-ip, lr}     \n"     \
 "   str     sp, [r9, #36]               \n"
 
+
+// Load Context
+// Loads a thread from its context object, which is pointed to by r9.
+// The loaded registers include the SP and the interrupt state in ip.
+// Restores the saved interrupt state.
 #define LOAD_CONTEXT                            \
 "   ldm     r9, {r4-r8, r10-ip, lr}     \n"     \
 "   ldr     sp, [r9, #36]               \n"     \
@@ -94,7 +112,7 @@ class Context
 
     uint32_t sp;        // sp, which can't be accessed by the ldm/stm instructions
 
-    Context *next;      // contextchain pointer
+    Context *next;      // contextchain pointer, this continues the LIFO chain pointed to by r9
 
 
     public:
@@ -136,7 +154,23 @@ class Context
         return stack[N-4] == 1;
         }
 
+
+    // get a pointer to the current context
+    static Context *pointer()
+        {
+        Context *r9;
+
+        __asm__ __volatile__(
+                "   mov %[r9], r9"           // fetch r9, probably into r0
+                : [r9]"=r"(r9)
+                :
+                :
+                );
+        return r9;
+        }
+
     };
+
 
 
 

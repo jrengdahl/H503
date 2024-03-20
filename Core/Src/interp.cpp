@@ -56,32 +56,6 @@ void commas(uint32_t x)
 
 char buf[INBUFLEN];
 
-// a simple thread used to benchmark the thread switching calls
-Context TestCtx;
-char TestStack[512];
-unsigned TestCount = 0;
-
-uint32_t TestThread(uintptr_t arg)
-    {
-    (void)arg;
-
-    while(TestCount--)
-        {
-        Context::suspend();
-        Context::suspend();
-        Context::suspend();
-        Context::suspend();
-        Context::suspend();
-        Context::suspend();
-        Context::suspend();
-        Context::suspend();
-        Context::suspend();
-        Context::suspend();
-        }
-    return 0;
-    }
-
-
 uint32_t interp(uintptr_t arg)
     {
     (void)arg;
@@ -339,25 +313,25 @@ uint32_t interp(uintptr_t arg)
             if(size==64)
                 {
                 __disable_irq();
-                last_wtime = omp_get_wtime_float();
+                last_wtime = omp_get_wtime(0);
                 lastTIM2 = __HAL_TIM_GET_COUNTER(&htim2);
                 Elapsed();
                 bogodelay(count);
                 ticks = Elapsed();
                 elapsedTIM2 = __HAL_TIM_GET_COUNTER(&htim2) - lastTIM2;
-                elapsed_wtime = omp_get_wtime_float() - last_wtime;
+                elapsed_wtime = omp_get_wtime(0) - last_wtime;
                 __enable_irq();
                 }
             else
                 {
                 __disable_irq();
-                last_wtime = omp_get_wtime_float();
+                last_wtime = omp_get_wtime(0);
                 lastTIM2 = __HAL_TIM_GET_COUNTER(&htim2);
                 Elapsed();
                 bogodelay((uint32_t)count);
                 ticks = Elapsed();
                 elapsedTIM2 = __HAL_TIM_GET_COUNTER(&htim2) - lastTIM2;
-                elapsed_wtime = omp_get_wtime_float() - last_wtime;
+                elapsed_wtime = omp_get_wtime(0) - last_wtime;
                 __enable_irq();
                 }
             commas(ticks);
@@ -445,35 +419,75 @@ uint32_t interp(uintptr_t arg)
 
 
 //              //                              //
-        HELP(  "t <num>                         run the thread test")
+        HELP(  "t <num>                         measure thread switch time")
         else if(buf[0]=='t' && buf[1]==' ')
             {
-            unsigned ticks;
-            unsigned count;
+            Context *ctx = Context::pointer();      // get the context pointer for thread 0
+            unsigned count = getdec(&p);            // get the number of iterations
+            unsigned i = count;
+            float start = 0;
+            float ticks = 0;
 
-            count = getdec(&p);
-            TestCount = count;
-            TestCtx.spawn(TestThread, TestStack);
-            Elapsed();
+            start = omp_get_wtime_float();
 
-            while(!Context::done(TestStack))
+            #pragma omp parallel num_threads(2)
+            if(omp_get_thread_num() == 0)
+                {
+                while(i)
                     {
-                    TestCtx.resume();
-                    TestCtx.resume();
-                    TestCtx.resume();
-                    TestCtx.resume();
-                    TestCtx.resume();
-                    TestCtx.resume();
-                    TestCtx.resume();
-                    TestCtx.resume();
-                    TestCtx.resume();
-                    TestCtx.resume();
+                    Context::suspend();
+                    Context::suspend();
+                    Context::suspend();
+                    Context::suspend();
+                    Context::suspend();
+                    Context::suspend();
+                    Context::suspend();
+                    Context::suspend();
+                    Context::suspend();
+                    Context::suspend();
+                    Context::suspend();
+                    Context::suspend();
+                    Context::suspend();
+                    Context::suspend();
+                    Context::suspend();
+                    Context::suspend();
+                    Context::suspend();
+                    Context::suspend();
+                    Context::suspend();
+                    Context::suspend();
                     }
+                }
+            else
+                {
+                while(i)
+                    {
+                    --i;
+                    ctx->resume();
+                    ctx->resume();
+                    ctx->resume();
+                    ctx->resume();
+                    ctx->resume();
+                    ctx->resume();
+                    ctx->resume();
+                    ctx->resume();
+                    ctx->resume();
+                    ctx->resume();
+                    ctx->resume();
+                    ctx->resume();
+                    ctx->resume();
+                    ctx->resume();
+                    ctx->resume();
+                    ctx->resume();
+                    ctx->resume();
+                    ctx->resume();
+                    ctx->resume();
+                    ctx->resume();
+                    }
+                }
 
-            ticks = Elapsed();
-            commas(ticks);
-            printf(" microseconds\n");
-            printf("%u ns\n", ticks/(count/50));
+            ticks = omp_get_wtime_float() - start;
+
+            printf("\n%lf nsec\n", ticks*1000000000.0/(count*40));
              }
 
 
@@ -524,27 +538,34 @@ uint32_t interp(uintptr_t arg)
 
             int test = 0;
 
-            if(isdigit(*p))
+            if(!isdigit(*p))
+                {
+                printf("0: omp_hello,  test #pragma omp parallel num_threads(arg)\n");
+                printf("1: omp_for,    test #pragma omp parallel for num_threads(arg)\n");
+                printf("2: omp_single, test #pragma omp single, arg is team size\n");
+                printf("3: permute(colors, ball, plevel, verbose), test omp_task\n");
+                }
+            else
                 {
                 test = getdec(&p);                              // get the count
                 skip(&p);
-                }
 
-            switch(test)
-                {
-            case 0: omp_hello(getdec(&p));      break;
-            case 1: omp_for(getdec(&p));        break;
-            case 2: omp_single(getdec(&p));     break;
-            case 3:
-                int colors = getdec(&p);
-                skip(&p);
-                int balls = getdec(&p);
-                skip(&p);
-                int plevel = *p?getdec(&p):32;
-                skip(&p);
-                int v = *p?getdec(&p):0;
-                permute(colors, balls, plevel, v);
-                break;
+                switch(test)
+                    {
+                case 0: omp_hello(getdec(&p));      break;
+                case 1: omp_for(getdec(&p));        break;
+                case 2: omp_single(getdec(&p));     break;
+                case 3:
+                    int colors = getdec(&p);
+                    skip(&p);
+                    int balls = getdec(&p);
+                    skip(&p);
+                    int plevel = *p?getdec(&p):32;
+                    skip(&p);
+                    int v = *p?getdec(&p):0;
+                    permute(colors, balls, plevel, v);
+                    break;
+                    }
                 }
             }
 
@@ -570,9 +591,6 @@ uint32_t interp(uintptr_t arg)
                 printf("\%s stack, %d bytes:\n", thread_names[i], omp_threads[i].stack_high - omp_threads[i].stack_low);
                 dump(omp_threads[i].stack_low, omp_threads[i].stack_high - omp_threads[i].stack_low);
                 }
-
-            printf("\nTestStack, %d bytes:\n", sizeof(TestStack));
-            dump(&TestStack, sizeof(TestStack));
             }
 
 //              //                              //

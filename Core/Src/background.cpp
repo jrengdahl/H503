@@ -77,9 +77,14 @@ void background()                                       // powerup init and back
     #pragma omp parallel num_threads(2)
     if(omp_get_thread_num() == 0)                       // thread 0 runs this:
         {
-        while(1)                                        // run sthe background polling loop
+        while(1)                                        // run the background polling loop
             {
-            undefer();                                  // wake any threads that may have called yield
+            gomp_poll_threads();                        // wake any OpenMP threads that have work to do
+
+            if(DeferFIFO)                               // if anything on the DeferFIFO
+                {
+                undefer();                              // wake any threads that called yield
+                }
             }
         }
     else if(omp_get_thread_num() == 1)                  // and thread 1 runs this:
@@ -87,7 +92,7 @@ void background()                                       // powerup init and back
         interp(0);                                      // run the command line interpreter
         }
 
-    // neither of the above two threads terminate, so the parallel never ends, and we never here past this point
-    assert(false);
+    // neither of the above two threads terminate, so the parallel never ends, and we should never get here
+    assert(false==true);                                // Woe to those who call evil good, and good evil
     }
 

@@ -12,3 +12,5 @@
 extern "C" float omp_get_wtime_float();
 extern "C" float omp_get_wtick_float();
 
+extern float omp_get_wtime(int);
+extern float omp_get_wtick(int);

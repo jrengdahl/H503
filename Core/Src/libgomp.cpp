@@ -98,25 +98,58 @@ void run_explicit(task *task)
 
 static uint32_t gomp_worker(uintptr_t id)
     {
+    omp_thread &thread = *omp_this_thread();
+
     while(true)
         {
-        omp_thread &thread = *omp_this_thread();
-        omp_thread &team = *omp_this_team();
+        thread.twaiting = true;
+        Context::suspend();
+        thread.twaiting = false;
+
         task *task;
 
         if((task=thread.task) != 0)
             {
             run_implicit(task);
             }
-        else if(team.task_list.take(task))         // if there are any explicit tasks waiting for a context
+        else
             {
-            run_explicit(task);
+            omp_thread &team = *omp_this_team();
+            if(team.task_list.take(task))         // if there are any explicit tasks waiting for a context
+                {
+                run_explicit(task);
+                }
             }
-
-        yield();
         }
 
     return 0;
+    }
+
+
+// called by background to poll all the threads and resume them if they have something to do
+void gomp_poll_threads()
+    {
+    for(int i=1; i<GOMP_MAX_NUM_THREADS; i++)
+        {
+        omp_thread *thread = &omp_threads[i];
+
+        if(thread->twaiting)
+            {
+            if(thread->task)
+                {
+                thread->context.resume();
+                }
+            else
+                {
+                omp_thread *team = thread->team_id == 0 ? thread : thread->team;
+
+                if(team->task_list)
+                    {
+                    thread->context.resume();
+                    }
+                }
+            }
+        }
     }
 
 
@@ -169,7 +202,7 @@ void libgomp_init()
             :
             );
 
-            omp_threads[i].team = (omp_thread *)0xFFFFFFFF;         // must never be used, since background cannot be a member of a team
+            omp_threads[i].team = (omp_thread *)0xFFFFFFFF;         // background's team pointer must never be used, since background cannot be a member of a team
             omp_threads[i].stack_low = (char *)&_stack_start;
             omp_threads[i].stack_high = (char *)&_stack_end;
             }
@@ -775,16 +808,29 @@ float omp_get_wtime_float(void)
     return fticks / 1000000.;
     }
 
+float omp_get_wtime(int __attribute__((__unused__)))
+    {
+    uint32_t ticks = __HAL_TIM_GET_COUNTER(&htim2);
+    float fticks = (float)ticks;
+    return fticks / 1000000.;
+    }
+
 // return the value of one tick (one microsecond)
 extern "C"
 double omp_get_wtick (void)
     {
-    return 1.0 / 1000000.;
+    return 0.000001;
     }
 
 // return the value of one tick (one microsecond)
 extern "C"
 float omp_get_wtick_float (void)
+    {
+    return 0.000001f;
+    }
+
+// return the value of one tick (one microsecond)
+float omp_get_wtick(int __attribute__((__unused__)))
     {
     return 0.000001f;
     }
