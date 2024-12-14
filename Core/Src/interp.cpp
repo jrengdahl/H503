@@ -4,20 +4,20 @@
 // BSD license -- see the accompanying LICENSE file
 
 
-#include <context.hpp>
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
-#include <ContextFIFO.hpp>
 #include <math.h>
-#include "cmsis.h"
 #include "local.h"
+#include "main.h"
+#include "cmsis.h"
 #include "bogodelay.hpp"
 #include "serial.h"
 #include "random.hpp"
 #include "cyccnt.hpp"
-#include "main.h"
 #include "boundaries.h"
+#include "context.hpp"
+#include "ContextFIFO.hpp"
 #include "libgomp.hpp"
 #include "omp.h"
 #include "tim.h"
@@ -31,6 +31,7 @@ extern "C" void SystemClock_PLL_Config(unsigned);
 extern "C" void SystemClock_HSI_Config(void);
 extern char InterpStack[2048];
 extern omp_thread omp_threads[GOMP_MAX_NUM_THREADS];
+bool waiting_for_command = false;
 
 
 // print a large number with commas
@@ -56,9 +57,8 @@ void commas(uint32_t x)
 
 char buf[INBUFLEN];
 
-uint32_t interp(uintptr_t arg)
+void interp()
     {
-    (void)arg;
 
     bear();
     printf("hello, world!\n");
@@ -69,11 +69,15 @@ uint32_t interp(uintptr_t arg)
         {
         const char *p;
 
+        yield();
         libgomp_reinit();                                                       // reset things in OPenMP such as the default number of threads
         ControlC = false;
+        SerialRaw = false;
         putchar('>');                                                           // output the command line prompt
         fflush(stdout);
+        waiting_for_command = true;
         getline(buf, INBUFLEN);                                                 // get a command line
+        waiting_for_command = false;
         p = buf;
         skip(&p);                                                               // skip command and following whitespace
 
@@ -342,33 +346,131 @@ uint32_t interp(uintptr_t arg)
             }
 
 
-        //              //                              //
+//              //                              //
         HELP(  "ldr <addr>                      load a word from address using ldr")
-        else if(buf[0]=='l' && buf[1]=='d' && buf[2]=='r')
+        else if(buf[0]=='l' && buf[1]=='d' && buf[2]=='r' && buf[3]==' ')
             {
             uintptr_t addr = gethex(&p);            // get the address
             uint32_t value;
 
-            __asm__ __volatile__("ldr %0, [%1]"     // load a word from the given address
+            skip(&p);
+
+            int size = 1;
+            if(isdigit(*p))size = getdec(&p);
+
+            for(int i=0; i++<size; addr += 4)
+                {
+                __asm__ __volatile__(
+                    "dsb SY            \n\t"
+                    "ldr %0, [%1]"                  // load a word from the given address
+                    : "=r"(value)
+                    : "r"(addr)
+                    : );
+
+                // print the result
+                if(i==size) printf("%08lx\n", value);
+                else        printf("%08lx ", value);
+                }
+            }
+
+//              //                              //
+        HELP(  "ldrh <addr> {size {o}}          load a halfword from address using ldrh")
+        else if(buf[0]=='l' && buf[1]=='d' && buf[2]=='r' && buf[3]=='h')
+            {
+            uintptr_t addr = gethex(&p);            // get the address
+            uint32_t value;
+
+            skip(&p);
+
+            int size = 1;
+            if(isdigit(*p))
+                {
+                size = getdec(&p);
+                skip(&p);
+                }
+
+
+            for(int i=0; i++<size; addr += 2)
+                {
+                __asm__ __volatile__(
+                    "dsb SY            \n\t"
+                    "ldrh %0, [%1]"     // load a word from the given address
+                    : "=r"(value)
+                    : "r"(addr)
+                    : );
+
+                if(*p=='o')printf("%06o%c", (int)value, i==size?'\n':' ');
+                else       printf("%04lx%c",     value, i==size?'\n':' ');                // print the result
+                }
+            }
+
+//              //                              //
+        HELP(  "ldrb <addr>                     load a byte from address using ldrb")
+        else if(buf[0]=='l' && buf[1]=='d' && buf[2]=='r' && buf[3]=='b')
+            {
+            uintptr_t addr = gethex(&p);            // get the address
+            uint32_t value;
+
+            __asm__ __volatile__(
+                "dsb SY            \n\t"
+                "ldrb %0, [%1]"     // load a word from the given address
              : "=r"(value)
              : "r"(addr)
              : );
 
-            printf("%lx\n", value);                 // print the result
+            printf("%02lx\n", value);                 // print the result
             }
 
+
 //              //                              //
-        HELP(  "str <value> <addr>              store value to address using str")
-        else if(buf[0]=='s' && buf[1]=='t' && buf[2]=='r')
+        HELP(  "str <value> <addr>              store word to address using str")
+        else if(buf[0]=='s' && buf[1]=='t' && buf[2]=='r' && buf[3]==' ')
             {
             uint32_t value = gethex(&p);
             skip(&p);
             uintptr_t addr = gethex(&p);            // get the address
 
-            __asm__ __volatile__("str %0, [%1]"
+            __asm__ __volatile__(
+                    "str %0, [%1]       \n\t"
+                    "dsb SY"
             :
             : "r"(value), "r"(addr)
             : );
+
+            }
+
+//              //                              //
+        HELP(  "strh <value> <addr>             store a halfword to address using strh")
+        else if(buf[0]=='s' && buf[1]=='t' && buf[2]=='r' && buf[3]=='h')
+            {
+            uint32_t value = gethex(&p);
+            skip(&p);
+            uintptr_t addr = gethex(&p);            // get the address
+
+            __asm__ __volatile__(
+                "strh %0, [%1]       \n\t"
+                "dsb SY"
+            :
+            : "r"(value), "r"(addr)
+            : );
+
+            }
+
+//              //                              //
+        HELP(  "strb <value> <addr>             store a byte to address using strb")
+        else if(buf[0]=='s' && buf[1]=='t' && buf[2]=='r' && buf[3]=='b')
+            {
+            uint32_t value = gethex(&p);
+            skip(&p);
+            uintptr_t addr = gethex(&p);            // get the address
+
+            __asm__ __volatile__(
+                "strb %0, [%1]       \n\t"
+                "dsb SY"
+            :
+            : "r"(value), "r"(addr)
+            : );
+
             }
 
 
@@ -495,12 +597,24 @@ uint32_t interp(uintptr_t arg)
         HELP(  "tmp                             read the temperature sensor")
         else if(buf[0]=='t' && buf[1]=='m' && buf[2]=='p')
             {
+            extern int read_temperature_raw();
             extern int read_temperature();
             int last_avg = -1;
             int repeat = 50;
-            int avg = 30;
-            int count = 0;
-            int last_count = 0;
+            int avg = 0;
+            double last_change = omp_get_wtime();
+            double now;
+            bool first_time = true;
+            const int NAVG = 50;
+
+#define in(x) ((x)/1000)
+#define fr(x) ((x)/100 - ((x)/1000)*10)
+
+            if(*p == 'r')
+                {
+                printf("raw temperature = %d\n", read_temperature_raw());
+                continue;
+                }
 
             if(isdigit(*p))                                                 // while there is any data left on the command line
                 {
@@ -510,18 +624,21 @@ uint32_t interp(uintptr_t arg)
             while(repeat && !ControlC)
                 {
                 int tmp = read_temperature();
+                int tmpF = (tmp*18 + 325)/10;
 
-                avg = (avg*9 + tmp)/10;
+                if(first_time) avg = tmp;
+                else           avg = (avg*(NAVG-1) + tmp)/NAVG;
 
-                if(avg-last_avg > 1 || last_avg-avg > 1)
+                if(avg-last_avg > 500 || avg-last_avg > 500)
                     {
-                    printf("temperature: %3d C, %3d F, avg = %3d C, delta = %d\n", tmp, (tmp*18 + 325)/10, avg, count - last_count);
+                    now = omp_get_wtime();
+                    printf("temperature: %3d.%01d C, %3d.%01d F, avg = %3d.%01d C, elapsed = %5.3f\n", in(tmp), fr(tmp), in(tmpF), fr(tmpF), in(avg), fr(avg), now-last_change);
                     last_avg = avg;
-                    last_count = count;
+                    last_change = now;
                     -- repeat;
                     }
 
-                ++count;
+                first_time = false;
 
                 yield();
                 }
@@ -570,15 +687,25 @@ uint32_t interp(uintptr_t arg)
             }
 
 //              //                              //
-        HELP(  "v <num>                         set verbosity level")
-        else if(buf[0]=='v' && buf[1]==' ')
+        HELP(  "v <type> <num>                  set verbosity level")
+        else if(buf[0]=='v' && (buf[1]==' ' || buf[1]==0))
             {
             extern int omp_verbose;
+            extern int temp_verbose;
 
-            if(isdigit(*p))
+            if(*p == 'o')
                 {
-                omp_verbose = getdec(&p);                              // get the count
+                skip(&p);
+                omp_verbose = getdec(&p);
                 }
+            else if(*p == 't')
+                {
+                skip(&p);
+                temp_verbose = getdec(&p);
+                }
+
+            printf("omp_verbose = %d\n", omp_verbose);
+            printf("temp_verbose = %d\n", temp_verbose);
             }
 
 //              //                              //
@@ -608,11 +735,8 @@ uint32_t interp(uintptr_t arg)
 
         // else I dunno what you want
         else printf("illegal command\n");
-
-        yield();
         }
 
-    return 0;
     }
 
 

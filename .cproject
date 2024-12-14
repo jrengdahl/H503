@@ -281,10 +281,10 @@
 				<useDefaultCommand>true</useDefaultCommand>
 				<runAllBuilders>true</runAllBuilders>
 			</target>
-			<target name="-j all" path="" targetID="org.eclipse.cdt.build.MakeTargetBuilder">
+			<target name="all -j" path="" targetID="org.eclipse.cdt.build.MakeTargetBuilder">
 				<buildCommand>make</buildCommand>
 				<buildArguments>-f ../Makefile</buildArguments>
-				<buildTarget>-j all</buildTarget>
+				<buildTarget>all -j</buildTarget>
 				<stopOnError>true</stopOnError>
 				<useDefaultCommand>false</useDefaultCommand>
 				<runAllBuilders>true</runAllBuilders>

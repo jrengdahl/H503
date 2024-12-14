@@ -54,14 +54,28 @@ uintptr_t gethex(const char **p)
     {
     uintptr_t x=0;
 
-    while(1)
+    if(**p != 'o')
         {
-        if('0'<=**p&&**p<='9')     x = (x<<4) + **p-'0';
-        else if('a'<=**p&&**p<='f')x = (x<<4) + **p-'a'+10;
-        else if('A'<=**p&&**p<='F')x = (x<<4) + **p-'A'+10;
-        else if( **p == '\''){}
-        else return x;
+        while(1)
+            {
+            if('0'<=**p&&**p<='9')     x = (x<<4) + **p-'0';
+            else if('a'<=**p&&**p<='f')x = (x<<4) + **p-'a'+10;
+            else if('A'<=**p&&**p<='F')x = (x<<4) + **p-'A'+10;
+            else if( **p == '\''){}
+            else return x;
+            (*p)++;
+            }
+        }
+    else
+        {
         (*p)++;
+        while(1)
+            {
+            if('0'<=**p&&**p<='7')     x = (x<<3) + **p-'0';
+            else if( **p == '\''){}
+            else return x;
+            (*p)++;
+            }
         }
     }
 
@@ -111,6 +125,7 @@ int get1()
 static int first=1;
 static char lastline[NHISTORY][INBUFLEN];
 static int lln=0;
+int getline_nchar = 0;
 
 
 // fill a command line buffer from stdin, handling command line editing and history
@@ -120,7 +135,7 @@ void getline(   char *buf,                                                      
     {
     int i;                                                                      // general purpose loop counter
     int c;                                                                      // current input character
-    int x=0;                                                                    // cursor postion
+    int x=0;                                                                    // cursor position
     int n=0;                                                                    // length of line
     int tll=0;
     
@@ -278,6 +293,7 @@ void getline(   char *buf,                                                      
             if(x<n)back(n-x);
             }
         fflush(stdout);
+        getline_nchar = n;
         }
     if(x<n)forward(n-x);
     putchar('\n');
@@ -285,5 +301,6 @@ void getline(   char *buf,                                                      
     for(i=0;i<n;i++)lastline[lln][i] = buf[i];
     lastline[lln][n]=0;
     lln = (lln+1)&HMASK;
+    getline_nchar = 0;
     }   
 

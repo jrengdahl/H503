@@ -17,8 +17,21 @@ extern uint64_t getlong(const char **p);
 extern uintptr_t gethex(const char **p);
 extern void skip(const char **p);
 
-extern "C" void trigon();
-extern "C" void trigoff();
+#define izdigit(p) (*p=='o' || ('0'<=*p&&*p<='9') || ('a'<=*p&&*p<='a') || ('A'<=*p&&*p<='A'))
+
+#define fflush(x)
+
+#if __cplusplus
+extern "C" {
+#endif
+
+//void trigon();
+//void trigoff();
+void memcpy32(uint32_t *dst, uint32_t *src, uint32_t size);
+
+#if __cplusplus
+    }
+#endif
 
 
 #endif

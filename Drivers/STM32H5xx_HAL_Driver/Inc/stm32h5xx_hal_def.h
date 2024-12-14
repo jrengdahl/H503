@@ -212,7 +212,10 @@ typedef enum
 /* ARM & GNUCompiler
 
 */
+
+#ifndef __NOINLINE
 #define __NOINLINE __attribute__ ( (noinline) )
+#endif
 
 #elif defined ( __ICCARM__ )
 /* ICCARM Compiler

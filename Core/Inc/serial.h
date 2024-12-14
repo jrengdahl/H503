@@ -6,7 +6,8 @@
 
 #include "Fifo.hpp"
 
-extern bool ControlC;
+extern volatile bool ControlC;
+extern bool SerialRaw;
 extern FIFO<char, 64> ConsoleFifo;
 extern bool PollRx();
 extern bool __io_kbhit();
@@ -19,6 +20,8 @@ extern "C" {
 
 int __io_putchar(int ch);
 int __io_getchar();
+int __io_getchart(unsigned time);
+int _write(int file, const char *ptr, int len);
 
 int vcp_kbhit();
 int vcp_getchar();

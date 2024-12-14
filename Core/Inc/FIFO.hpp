@@ -3,6 +3,10 @@
 // A single-writer-single-reader lock-free/wait-free FIFO.
 // Multi-thread and multi-core.
 //
+// This FIFO can be simultaneously written by one thread/core, and read by another.
+// There can be only one writer and one reader. A long as this restriction is observed,
+// the Add and Take operations are atomic. No special CPU instructions are used (i.e. locking).
+// Interrupts do not have to be disabled.
 //
 // Copyright (c) 2023 Jonathan Engdahl
 // BSD license -- see the accompanying LICENSE file

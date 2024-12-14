@@ -50,8 +50,4 @@ void exit( int exit_code UNUSED)
 
 int __errno = 0;
 
-extern "C"
-int fflush(FILE * UNUSED)
-    {
-    return 0;
-    }
+

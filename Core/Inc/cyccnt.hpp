@@ -5,6 +5,7 @@
 #define CYCCNT_HPP
 
 #include <stdint.h>
+#include "cmsis.h"
 
 #define xDWT_CONTROL (*(uint32_t volatile *)0xE0001000)
 #define xCYCCNT (*(uint32_t volatile *)0xE0001004)
@@ -37,6 +38,16 @@ static inline unsigned Elapsed()
     return delta;
     }
 
+static inline void TimeStamp()
+    {
+    LastTimeStamp = xCYCCNT;
+    }
+
+static inline unsigned NsSince()
+    {
+    return (xCYCCNT - LastTimeStamp)*1000/CPU_FREQ_MHZ;
+    }
+
 static inline void Pause()
     {
     LastTimeStamp -= xCYCCNT;
@@ -46,5 +57,19 @@ static inline void Resume()
     {
     LastTimeStamp += xCYCCNT;
     }
+
+
+static __FORCEINLINE unsigned Now()
+    {
+    return xCYCCNT;
+    }
+
+static __FORCEINLINE unsigned TicksPer(unsigned ns)
+    {
+    return (ns*CPU_FREQ_MHZ)/1000;
+    }
+
+
+
 
 #endif //CYCCNT_HPP

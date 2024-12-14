@@ -81,6 +81,7 @@ void trigoff()
   */
 int main(void)
 {
+
   /* USER CODE BEGIN 1 */
 
   /* USER CODE END 1 */
@@ -119,7 +120,7 @@ int main(void)
     Error_Handler();
     }
 
-  /* start the TIM2, whihc is used for the 1 usec clock */
+  /* start TIM2, whihc is used for the 1 usec clock */
   HAL_TIM_Base_Start(&htim2);
 
   extern void background();
@@ -191,6 +192,11 @@ void SystemClock_Config(void)
   {
     Error_Handler();
   }
+  HAL_RCC_MCOConfig(RCC_MCO2, RCC_MCO2SOURCE_SYSCLK, RCC_MCODIV_10);
+
+  /** Configure the programming delay
+  */
+  __HAL_FLASH_SET_PROGRAM_DELAY(FLASH_PROGRAMMING_DELAY_1);
 }
 
 /* USER CODE BEGIN 4 */
