@@ -5,12 +5,14 @@
 
  
 #include <stdint.h>
+#include "main.h"
 #include "context.hpp"
 #include "Fifo.hpp"
 #include "ContextFIFO.hpp"
 #include "Port.hpp"
 #include "CriticalRegion.hpp"
 #include "usbd_cdc_if.h"
+#include "tim.h"
 
 extern "C" const char *strnchr(const char *s, int n, int c);
 
@@ -21,6 +23,20 @@ FIFO<char, 64> ConsoleFifo;
 
 bool ControlC = false;
 bool SerialRaw = false;
+
+extern "C"
+int __io_kbhit()                                // test for input
+    {
+    if(ConsoleFifo)
+        {
+        return 1;
+        }
+    else
+        {
+        return 0;
+        }
+    }
+
 
 extern "C"
 int __io_getchar()                              // link the CMSIS syslib to the HAL's UART input
@@ -41,6 +57,27 @@ int __io_getchar()                              // link the CMSIS syslib to the 
     while(!ConsoleFifo.take(ch));
 
     return ch;
+    }
+
+
+extern "C"
+int __io_getchart(unsigned timeout)                      // getch with timeout
+    {
+    char ch;
+    uint32_t start = __HAL_TIM_GET_COUNTER(&htim2);
+
+    do
+        {
+        if(ConsoleFifo)
+            {
+            ConsoleFifo.take(ch);
+
+            return ch;
+            }
+        yield();
+        }
+    while(__HAL_TIM_GET_COUNTER(&htim2) - start < timeout);
+    return -1;
     }
 
 
