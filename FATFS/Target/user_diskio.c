@@ -21,7 +21,7 @@
 /*
  * Warning: the user section 0 is no more in use (starting from CubeMx version 4.16.0)
  * To be suppressed in the future.
- * Kept to ensure backward compatibility with previous CubeMx versions when
+ * Kept to ensure backwar&hod compatibility with previous CubeMx versions when
  * migrating projects.
  * User code previously added there should be copied in the new user sections before
  * the section contents can be deleted.
@@ -35,8 +35,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include <string.h>
 #include "user_diskio.h"
-#include "QSPI.h"
-#include "FATFS_SD.h"
+#include "SSPI.h"
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
@@ -48,35 +47,26 @@ static volatile DSTATUS Stat = STA_NOINIT;
 
 /* Private function prototypes -----------------------------------------------*/
 
-DSTATUS QSPI_initialize (BYTE pdrv);
-DSTATUS QSPI_status (BYTE pdrv);
-DRESULT QSPI_read (BYTE pdrv, BYTE *buff, DWORD sector, UINT count);
-DRESULT QSPI_write (BYTE pdrv, const BYTE *buff, DWORD sector, UINT count);
-DRESULT QSPI_ioctl (BYTE pdrv, BYTE cmd, void *buff);
+DSTATUS SPI_initialize (BYTE pdrv);
+DSTATUS SPI_status (BYTE pdrv);
+DRESULT SPI_read (BYTE pdrv, BYTE *buff, DWORD sector, UINT count);
+DRESULT SPI_write (BYTE pdrv, const BYTE *buff, DWORD sector, UINT count);
+DRESULT SPI_ioctl (BYTE pdrv, BYTE cmd, void *buff);
 
-Diskio_drvTypeDef  QSPI_Driver =
+Diskio_drvTypeDef  SPI_Driver =
   {
-  QSPI_initialize,
-  QSPI_status,
-  QSPI_read,
-  QSPI_write,
-  QSPI_ioctl,
-  };
-
-Diskio_drvTypeDef  SD_disk_Driver =
-  {
-  SD_disk_initialize,
-  SD_disk_status,
-  SD_disk_read,
-  SD_disk_write,
-  SD_disk_ioctl,
+  SPI_initialize,
+  SPI_status,
+  SPI_read,
+  SPI_write,
+  SPI_ioctl,
   };
 
 Disk_drvTypeDef disk =
   {
-  {0, 0, 0},
-  {&SD_disk_Driver, &SD_disk_Driver, &QSPI_Driver},
-  3
+  {0},
+  {&SPI_Driver},
+  1
   };
 
 /* USER CODE END DECL */
@@ -88,7 +78,7 @@ Disk_drvTypeDef disk =
   * @param  pdrv: Physical drive number (0..)
   * @retval DSTATUS: Operation status
   */
-DSTATUS QSPI_initialize (
+DSTATUS SPI_initialize (
 	BYTE pdrv           /* Physical drive number to identify the drive */
 )
 {
@@ -103,7 +93,7 @@ DSTATUS QSPI_initialize (
   * @param  pdrv: Physical drive number (0..)
   * @retval DSTATUS: Operation status
   */
-DSTATUS QSPI_status (
+DSTATUS SPI_status (
 	BYTE pdrv       /* Physical drive number to identify the drive */
 )
 {
@@ -121,7 +111,7 @@ DSTATUS QSPI_status (
   * @param  count: Number of sectors to read (1..128)
   * @retval DRESULT: Operation result
   */
-DRESULT QSPI_read (
+DRESULT SPI_read (
 	BYTE pdrv,      /* Physical drive nmuber to identify the drive */
 	BYTE *buff,     /* Data buffer to store read data */
 	DWORD sector,   /* Sector address in LBA */
@@ -130,11 +120,11 @@ DRESULT QSPI_read (
 {
   /* USER CODE BEGIN READ */
 
-    uint32_t address = sector * QSPI_SECTOR_SIZE;
+    uint32_t address = sector * SPI_SECTOR_SIZE;
     for (UINT i = 0; i < count*2; i++)
         {
-        if (QSPI_ReadPage(&hospi1, address, buff + i * QSPI_PAGE_SIZE, QSPI_PAGE_SIZE) != HAL_OK) return RES_ERROR;
-        address += QSPI_PAGE_SIZE;
+        if (SPI_ReadPage(&hspi2, address, buff + i * SPI_PAGE_SIZE, SPI_PAGE_SIZE) != HAL_OK) return RES_ERROR;
+        address += SPI_PAGE_SIZE;
         }
 
     return RES_OK;
@@ -150,7 +140,7 @@ DRESULT QSPI_read (
   * @param  count: Number of sectors to write (1..128)
   * @retval DRESULT: Operation result
   */
-DRESULT QSPI_write (
+DRESULT SPI_write (
 	BYTE pdrv,          /* Physical drive nmuber to identify the drive */
 	const BYTE *buff,   /* Data to be written */
 	DWORD sector,       /* Sector address in LBA */
@@ -159,16 +149,16 @@ DRESULT QSPI_write (
 {
   /* USER CODE BEGIN WRITE */
 
-    uint32_t address = sector * QSPI_SECTOR_SIZE;
+    uint32_t address = sector * SPI_SECTOR_SIZE;
     for (UINT i = 0; i < count*2; i++)
         {
-        if((address & (QSPI_BLOCK_SIZE-1)) == 0
-        && QSPI_EraseSector(&hospi1, address) != HAL_OK)
+        if((address & (SPI_BLOCK_SIZE-1)) == 0
+        && SPI_EraseSector(&hspi2, address) != HAL_OK)
             {
             return RES_ERROR;
             }
-        if (QSPI_WritePage(&hospi1, address, (uint8_t *)buff + i * QSPI_PAGE_SIZE, QSPI_PAGE_SIZE) != HAL_OK) return RES_ERROR;
-        address += QSPI_PAGE_SIZE;
+        if (SPI_WritePage(&hspi2, address, (uint8_t *)buff + i * SPI_PAGE_SIZE, SPI_PAGE_SIZE) != HAL_OK) return RES_ERROR;
+        address += SPI_PAGE_SIZE;
         }
 
     return RES_OK;
@@ -183,7 +173,7 @@ DRESULT QSPI_write (
   * @param  *buff: Buffer to send/receive control data
   * @retval DRESULT: Operation result
   */
-DRESULT QSPI_ioctl (
+DRESULT SPI_ioctl (
 	BYTE pdrv,      /* Physical drive nmuber (0..) */
 	BYTE cmd,       /* Control code */
 	void *buff      /* Buffer to send/receive control data */
@@ -196,13 +186,13 @@ DRESULT QSPI_ioctl (
     case CTRL_SYNC:
         return RES_OK;
     case GET_SECTOR_COUNT:
-        *(DWORD *)buff = QSPI_TOTAL_SIZE / QSPI_SECTOR_SIZE;
+        *(DWORD *)buff = SPI_TOTAL_SIZE / SPI_SECTOR_SIZE;
         return RES_OK;
     case GET_SECTOR_SIZE:
-        *(WORD *)buff = QSPI_SECTOR_SIZE;
+        *(WORD *)buff = SPI_SECTOR_SIZE;
         return RES_OK;
     case GET_BLOCK_SIZE:
-        *(DWORD *)buff = QSPI_BLOCK_SIZE / QSPI_SECTOR_SIZE;
+        *(DWORD *)buff = SPI_BLOCK_SIZE / SPI_SECTOR_SIZE;
         return RES_OK;
     default:
         return RES_PARERR;

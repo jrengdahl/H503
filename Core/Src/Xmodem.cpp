@@ -1,8 +1,8 @@
 #include <stdint.h>
 #include <stdio.h>
+#include <SSPI.h>    // Your QSPI interface functions
 #include "main.h"
 #include "serial.h"  // Your serial communication functions
-#include "QSPI.h"    // Your QSPI interface functions
 
 #define SOH 0x01
 #define EOT 0x04
@@ -89,15 +89,15 @@ int xmodem_receive(uint8_t *qbuffer)
                 qbuffer[qi++] = xbuffer[i + 2];
                 }
 
-            if (qi >= QSPI_PAGE_SIZE)
+            if (qi >= SPI_PAGE_SIZE)
                 {
                 // Write the full page to QSPI flash
-                if (QSPI_WritePage(&hospi1, address, qbuffer, QSPI_PAGE_SIZE) != HAL_OK)
+                if (SPI_WritePage(&hspi2, address, qbuffer, SPI_PAGE_SIZE) != HAL_OK)
                     {
                     reason = R_WRITE;
                     break;
                     }
-                address += QSPI_PAGE_SIZE;
+                address += SPI_PAGE_SIZE;
                 qi = 0;
                 }
 

@@ -6,13 +6,13 @@
 #include "main.h"
 #include "cmsis.h"
 #include "serial.h"
-#include "QSPI.h"
+#include "SSPI.h"
 
 extern uint32_t qbuf[512/4];
 extern void print_status_register(uint8_t regCommand);
 
 
-void QspiCommand(char *p)
+void SspiCommand(char *p)
     {
     if(*p == 'r')
         {
@@ -25,18 +25,20 @@ void QspiCommand(char *p)
 
         for(int i=0; i<count; i++)
             {
-            QSPI_ReadPage(&hospi1, addr, (uint8_t *)&qbuf, 256);
+            SPI_ReadPage(&hspi2, addr, (uint8_t *)&qbuf, 256);
             printf("%08x\n", (unsigned)addr);
             dump(qbuf, 256);
             addr += 256;
             }
         }
+
     else if(p[0] == 's')
         {
         print_status_register(READ_STATUS_REG_1_CMD);
         print_status_register(READ_STATUS_REG_2_CMD);
         print_status_register(READ_STATUS_REG_3_CMD);
         }
+
     else if(p[0] == 'f')
         {
         skip(&p);
@@ -46,9 +48,10 @@ void QspiCommand(char *p)
 
         for(int i=0; i<256/4; i++)qbuf[i] = data;
 
-        QSPI_WritePage(&hospi1, addr, (uint8_t *)&qbuf, 256);
+        SPI_WritePage(&hspi2, addr, (uint8_t *)&qbuf, 256);
         }
-    else if(p[0] == 'e' && p[1] != 'e')
+
+    else if(p[0] == 'e' && p[1] != 's')
         {
         int count = 1;
 
@@ -59,16 +62,18 @@ void QspiCommand(char *p)
 
         for(int i=0; i<count; i++)
             {
-            QSPI_EraseSector(&hospi1, addr);
+            SPI_EraseSector(&hspi2, addr);
             addr += 256;
             }
         }
-    else if(p[0] == 'e' && p[1] == 'e')
+
+    else if(p[0] == 'e' && p[1] == 'c')
         {
         printf("erasing entire SPI-NOR, this may take several minutes\n");
-        QSPI_EraseChip(&hospi1);
+        SPI_EraseChip(&hspi2);
         printf("erasing complete\n");
         }
+
     else if(p[0] == 'x')
         {
         int res;
@@ -78,5 +83,9 @@ void QspiCommand(char *p)
         if(res==0)printf("file received OK\n");
         else printf("xmodem transfer failed %d\n", res);
         }
-    else printf("unrecognized subcommand\n");
+
+    else
+        {
+        printf("unrecognized subcommand\n");
+        }
     }

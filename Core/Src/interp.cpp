@@ -216,18 +216,11 @@ void interp()
             mem();
             }
 
-        HELP(  "spi <command> {<value>}         SPI2 tests")
-        else if(buf[0]=='s' && buf[1]=='p' && buf[2]=='i')
-            {
-            extern void SpiCommand(char *p);
-            SpiCommand(p);
-            }
-
         HELP(  "q                               QSPI tests")
         else if(buf[0]=='q' && buf[1]==' ')
             {
-            extern void QspiCommand(char *p);
-            QspiCommand(p);
+            extern void SspiCommand(char *p);
+            SspiCommand(p);
             }
 
         HELP(  "fmt <blocks> <path>             FATFS format a FATFS drive")
@@ -277,8 +270,6 @@ void interp()
             {
             extern void DiffCommand(char *p);
             DiffCommand(p);
-            }
-
             }
 
         // print the help screen

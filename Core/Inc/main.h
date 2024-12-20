@@ -61,6 +61,8 @@ extern void foo();
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
+#define SPI2_NSS_Pin GPIO_PIN_12
+#define SPI2_NSS_GPIO_Port GPIOB
 #define PA8_Pin GPIO_PIN_8
 #define PA8_GPIO_Port GPIOA
 #define SWDIO_Pin GPIO_PIN_13
