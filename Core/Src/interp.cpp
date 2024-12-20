@@ -11,12 +11,17 @@
 #include "serial.h"
 #include "ContextFIFO.hpp"
 #include "libgomp.hpp"
+#include "ff.h"
 
 
 extern void bear();
 
 char buf[INBUFLEN];
 bool waiting_for_command = false;
+
+FATFS FatFs[3];
+FIL fil;
+uint32_t qbuf[512/4];
 
 // print help string, see usage below
 #define HELP(s) else if(buf[0]=='?' && puts(s) && 0){}
@@ -26,6 +31,16 @@ void interp()
     bear();
     printf("hello, world!\n");
     printf("build: %s %s\n", __DATE__, __TIME__);
+
+    if(f_mount(&FatFs[0], "0:", 1) != FR_OK)
+        {
+        printf("FATFS mount error on SPI-NOR\n");
+        }
+    else
+        {
+        printf("FATFS mount OK on SPI-NOR\n");
+        }
+
 
     while(1)
         {
@@ -199,6 +214,71 @@ void interp()
             {
             extern void mem();
             mem();
+            }
+
+        HELP(  "spi <command> {<value>}         SPI2 tests")
+        else if(buf[0]=='s' && buf[1]=='p' && buf[2]=='i')
+            {
+            extern void SpiCommand(char *p);
+            SpiCommand(p);
+            }
+
+        HELP(  "q                               QSPI tests")
+        else if(buf[0]=='q' && buf[1]==' ')
+            {
+            extern void QspiCommand(char *p);
+            QspiCommand(p);
+            }
+
+        HELP(  "fmt <blocks> <path>             FATFS format a FATFS drive")
+        else if(buf[0]=='f' && buf[1]=='m' && buf[2]=='t')
+            {
+            extern void FmtCommand(char *p);
+            FmtCommand(p);
+            }
+
+        HELP(  "mnt <path>                      mount a FATFS volume")
+        else if(buf[0]=='m' && buf[1]=='n' && buf[2]=='t')
+            {
+            extern void MntCommand(char *p);
+            MntCommand(p);
+            }
+
+        HELP(  "cat <path>                      copy a file to the console")
+        else if(buf[0]=='c' && buf[1]=='a' && buf[2]=='t')
+            {
+            extern void CatCommand(char *p);
+            CatCommand(p);
+            }
+
+        HELP(  "dump <path>                     dump a file to the console")
+        else if(buf[0]=='d' && buf[1]=='u' && buf[2]=='m')
+            {
+            extern void FdumpCommand(char *p);
+            FdumpCommand(p);
+            }
+
+        HELP(  "ls <path>                       list the contents of a directory")
+        else if(buf[0]=='l' && buf[1]=='s')
+            {
+            extern void LsCommand(char *p);
+            LsCommand(p);
+            }
+
+        HELP(  "cp <source path> <dest path>    copy a file")
+        else if(buf[0]=='c' && buf[1]=='p')
+            {
+            extern void CpCommand(char *p);
+            CpCommand(p);
+            }
+
+        HELP(  "diff <path1> <path2>            compare two files")
+        else if(buf[0]=='d' && buf[1]=='i' && buf[2]=='f')
+            {
+            extern void DiffCommand(char *p);
+            DiffCommand(p);
+            }
+
             }
 
         // print the help screen

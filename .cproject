@@ -43,6 +43,8 @@
 									<listOptionValue builtIn="false" value="&quot;C:\cross\arm-cortexm7-eabi\arm-cortexm7-eabi\include&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;C:\cross\arm-cortexm7-eabi\lib\gcc\arm-cortexm7-eabi\14.2.0\include-fixed&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;C:\cross\arm-cortexm7-eabi\arm-cortexm7-eabi\sys-include&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/FATFS/Target}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/Middlewares/Third_Party/FatFs/src}&quot;"/>
 								</option>
 								<inputType id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.assembler.input.1414542853" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.assembler.input"/>
 							</tool>
@@ -64,10 +66,12 @@
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/H503/Core/Src/USB_Device/App}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/H503/Core/Src/STM32_USB_Device_Library/Class/CDC/Inc}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/H503/Core/Src/STM32_USB_Device_Library/Core/Inc}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;C:\cross\arm-cortexm7-eabi\lib\gcc\arm-cortexm7-eabi\14.2.0\include&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;C:\cross\arm-cortexm7-eabi\arm-cortexm7-eabi\include&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;C:\cross\arm-cortexm7-eabi\lib\gcc\arm-cortexm7-eabi\14.2.0\include-fixed&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;C:\cross\arm-cortexm7-eabi\arm-cortexm7-eabi\sys-include&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/FATFS/Target}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/Middlewares/Third_Party/FatFs/src}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;C:\cross\arm-cortexm33-eabi\lib\gcc\arm-cortexm33-eabi\14.2.0\include&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;C:\cross\arm-cortexm33-eabi\arm-cortexm33-eabi\include&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;C:\cross\arm-cortexm33-eabi\lib\gcc\arm-cortexm33-eabi\14.2.0\include-fixed&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;C:\cross\arm-cortexm33-eabi\arm-cortexm33-eabi\sys-include&quot;"/>
 								</option>
 								<option id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.option.cyclomaticcomplexity.1218095983" name="Cyclomatic Complexity (-fcyclomatic-complexity)" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.option.cyclomaticcomplexity" useByScannerDiscovery="false" value="false" valueType="boolean"/>
 								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.option.otherflags.1275872389" name="Other flags" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.option.otherflags" useByScannerDiscovery="true" valueType="stringList">
@@ -95,6 +99,8 @@
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/H503/Core/Src/USB_Device/App}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/H503/Core/Src/STM32_USB_Device_Library/Class/CDC/Inc}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/H503/Core/Src/STM32_USB_Device_Library/Core/Inc}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/FATFS/Target}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/Middlewares/Third_Party/FatFs/src}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;C:\cross\arm-cortexm33-eabi\arm-cortexm33-eabi\include&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;C:\cross\arm-cortexm33-eabi\arm-cortexm33-eabi\sys-include&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;C:\cross\arm-cortexm33-eabi\lib\gcc\arm-cortexm33-eabi\14.2.0\include&quot;"/>
@@ -188,6 +194,8 @@
 									<listOptionValue builtIn="false" value="&quot;C:\cross\arm-cortexm7-eabi\arm-cortexm7-eabi\include&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;C:\cross\arm-cortexm7-eabi\lib\gcc\arm-cortexm7-eabi\14.2.0\include-fixed&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;C:\cross\arm-cortexm7-eabi\arm-cortexm7-eabi\sys-include&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/FATFS/Target}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/Middlewares/Third_Party/FatFs/src}&quot;"/>
 								</option>
 								<inputType id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.assembler.input.1863889835" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.assembler.input"/>
 							</tool>
@@ -212,6 +220,8 @@
 									<listOptionValue builtIn="false" value="&quot;C:\cross\arm-cortexm7-eabi\arm-cortexm7-eabi\include&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;C:\cross\arm-cortexm7-eabi\lib\gcc\arm-cortexm7-eabi\14.2.0\include-fixed&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;C:\cross\arm-cortexm7-eabi\arm-cortexm7-eabi\sys-include&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/FATFS/Target}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/Middlewares/Third_Party/FatFs/src}&quot;"/>
 								</option>
 								<inputType id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.input.c.1286426286" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.input.c"/>
 							</tool>
@@ -236,6 +246,8 @@
 									<listOptionValue builtIn="false" value="&quot;C:\cross\arm-cortexm7-eabi\arm-cortexm7-eabi\include&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;C:\cross\arm-cortexm7-eabi\lib\gcc\arm-cortexm7-eabi\14.2.0\include-fixed&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;C:\cross\arm-cortexm7-eabi\arm-cortexm7-eabi\sys-include&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/FATFS/Target}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/Middlewares/Third_Party/FatFs/src}&quot;"/>
 								</option>
 								<inputType id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.cpp.compiler.input.cpp.1809647089" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.cpp.compiler.input.cpp"/>
 							</tool>
