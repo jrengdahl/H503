@@ -112,7 +112,6 @@ void background()                                       // powerup init and back
         interp();                                       // run the command line interpreter
         }
 
-
     // neither of the above threads terminate, so the parallel never ends, and we should never get here
     assert(false==true);                                // Woe to those who call evil good, and good evil
     }

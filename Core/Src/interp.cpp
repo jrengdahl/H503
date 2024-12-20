@@ -19,7 +19,7 @@ extern void bear();
 char buf[INBUFLEN];
 bool waiting_for_command = false;
 
-FATFS FatFs[3];
+FATFS FatFs[_VOLUMES];
 FIL fil;
 uint32_t qbuf[512/4];
 
