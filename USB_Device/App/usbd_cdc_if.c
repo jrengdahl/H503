@@ -25,6 +25,8 @@
 
 /* USER CODE BEGIN INCLUDE */
 
+#include "cmsis.h"
+
 /* USER CODE END INCLUDE */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -174,6 +176,7 @@ static int8_t CDC_Init_FS(void)
 
 /**
   * @brief  DeInitializes the CDC media low layer
+  * @param  None
   * @retval USBD_OK if all operations are OK else USBD_FAIL
   */
 static int8_t CDC_DeInit_FS(void)
@@ -195,23 +198,23 @@ static int8_t CDC_Control_FS(uint8_t cmd, uint8_t* pbuf, uint16_t length)
   /* USER CODE BEGIN 5 */
   switch(cmd)
   {
-    case CDC_SEND_ENCAPSULATED_COMMAND:
+  case CDC_SEND_ENCAPSULATED_COMMAND:
 
     break;
 
-    case CDC_GET_ENCAPSULATED_RESPONSE:
+  case CDC_GET_ENCAPSULATED_RESPONSE:
 
     break;
 
-    case CDC_SET_COMM_FEATURE:
+  case CDC_SET_COMM_FEATURE:
 
     break;
 
-    case CDC_GET_COMM_FEATURE:
+  case CDC_GET_COMM_FEATURE:
 
     break;
 
-    case CDC_CLEAR_COMM_FEATURE:
+  case CDC_CLEAR_COMM_FEATURE:
 
     break;
 
@@ -232,19 +235,19 @@ static int8_t CDC_Control_FS(uint8_t cmd, uint8_t* pbuf, uint16_t length)
   /*                                        4 - Space                            */
   /* 6      | bDataBits  |   1   | Number Data bits (5, 6, 7, 8 or 16).          */
   /*******************************************************************************/
-    case CDC_SET_LINE_CODING:
+  case CDC_SET_LINE_CODING:
 
     break;
 
-    case CDC_GET_LINE_CODING:
+  case CDC_GET_LINE_CODING:
 
     break;
 
-    case CDC_SET_CONTROL_LINE_STATE:
+  case CDC_SET_CONTROL_LINE_STATE:
 
     break;
 
-    case CDC_SEND_BREAK:
+  case CDC_SEND_BREAK:
 
     break;
 
@@ -257,7 +260,7 @@ static int8_t CDC_Control_FS(uint8_t cmd, uint8_t* pbuf, uint16_t length)
 }
 
 /**
-  * @brief  Data received over USB OUT endpoint are sent over CDC interface
+  * @brief Data received over USB OUT endpoint are sent over CDC interface
   *         through this function.
   *
   *         @note
@@ -350,7 +353,10 @@ static int8_t CDC_TransmitCplt_FS(uint8_t *Buf, uint32_t *Len, uint8_t epnum)
 /* USER CODE BEGIN PRIVATE_FUNCTIONS_IMPLEMENTATION */
 void vcp_init ()
     {
-    while(!vcp_init_complete);		        // Wait until the CDC library calls CDC_Init_FS, by checking for a non-null buffer pointer
+    while(!vcp_init_complete)		        // Wait until the CDC library calls CDC_Init_FS, by checking for a non-null buffer pointer
+        {
+        COMPILER_BARRIER();
+        }
     }
 
 /* USER CODE END PRIVATE_FUNCTIONS_IMPLEMENTATION */

@@ -344,7 +344,7 @@ static void Get_SerialNum(void)
   uint32_t deviceserial1;
   uint32_t deviceserial2;
 
-#if 0 // this does not work on the STM32H503 -- perhaps the unique ID did not get programmed?
+#if 0 // this does not work on some STM32H503 -- perhaps the unique ID did not get programmed in early devices?
   deviceserial0 = *(uint32_t *) DEVICE_ID1;
   deviceserial1 = *(uint32_t *) DEVICE_ID2;
   deviceserial2 = *(uint32_t *) DEVICE_ID3;

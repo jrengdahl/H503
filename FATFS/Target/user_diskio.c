@@ -21,7 +21,7 @@
 /*
  * Warning: the user section 0 is no more in use (starting from CubeMx version 4.16.0)
  * To be suppressed in the future.
- * Kept to ensure backwar&hod compatibility with previous CubeMx versions when
+ * Kept to ensure backward compatibility with previous CubeMx versions when
  * migrating projects.
  * User code previously added there should be copied in the new user sections before
  * the section contents can be deleted.
