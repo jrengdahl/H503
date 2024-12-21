@@ -58,6 +58,10 @@ extern void trigon();
 extern void trigoff();
 extern void foo();
 
+extern void LED_on();
+extern void LED_off();
+
+
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/

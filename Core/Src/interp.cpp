@@ -223,11 +223,11 @@ void interp()
             SspiCommand(p);
             }
 
-        HELP(  "fmt <blocks> <path>             FATFS format a FATFS drive")
-        else if(buf[0]=='f' && buf[1]=='m' && buf[2]=='t')
+        HELP(  "mkfs <blocks> <path>            FATFS format a FATFS drive")
+        else if(buf[0]=='m' && buf[1]=='k' && buf[2]=='f' && buf[3]=='s')
             {
-            extern void FmtCommand(char *p);
-            FmtCommand(p);
+            extern void MkfsCommand(char *p);
+            MkfsCommand(p);
             }
 
         HELP(  "mnt <path>                      mount a FATFS volume")

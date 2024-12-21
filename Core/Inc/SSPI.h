@@ -11,7 +11,7 @@ extern "C" {
 #endif
 
 #define SPI_PAGE_SIZE 256
-#define SPI_SECTOR_SIZE 512
+#define SPI_LBA_SIZE 512
 #define SPI_BLOCK_SIZE 4096
 #define SPI_TOTAL_SIZE (16 * 1024 * 1024) // 16 MB for example
 

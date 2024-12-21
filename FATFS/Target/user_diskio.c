@@ -120,7 +120,7 @@ DRESULT SPI_read (
 {
   /* USER CODE BEGIN READ */
 
-    uint32_t address = sector * SPI_SECTOR_SIZE;
+    uint32_t address = sector * SPI_PAGE_SIZE * 2;
     for (UINT i = 0; i < count*2; i++)
         {
         if (SPI_ReadPage(&hspi2, address, buff + i * SPI_PAGE_SIZE, SPI_PAGE_SIZE) != HAL_OK) return RES_ERROR;
@@ -149,7 +149,7 @@ DRESULT SPI_write (
 {
   /* USER CODE BEGIN WRITE */
 
-    uint32_t address = sector * SPI_SECTOR_SIZE;
+    uint32_t address = sector * SPI_PAGE_SIZE * 2;
     for (UINT i = 0; i < count*2; i++)
         {
         if((address & (SPI_BLOCK_SIZE-1)) == 0
@@ -186,13 +186,13 @@ DRESULT SPI_ioctl (
     case CTRL_SYNC:
         return RES_OK;
     case GET_SECTOR_COUNT:
-        *(DWORD *)buff = SPI_TOTAL_SIZE / SPI_SECTOR_SIZE;
+        *(DWORD *)buff = SPI_TOTAL_SIZE / SPI_LBA_SIZE;
         return RES_OK;
     case GET_SECTOR_SIZE:
-        *(WORD *)buff = SPI_SECTOR_SIZE;
+        *(WORD *)buff = SPI_LBA_SIZE;
         return RES_OK;
     case GET_BLOCK_SIZE:
-        *(DWORD *)buff = SPI_BLOCK_SIZE / SPI_SECTOR_SIZE;
+        *(DWORD *)buff = SPI_BLOCK_SIZE;
         return RES_OK;
     default:
         return RES_PARERR;

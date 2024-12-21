@@ -48,6 +48,8 @@ HAL_StatusTypeDef SPI_WritePage(
     if (size > 256)
         return HAL_ERROR;
 
+    LED_on();
+
     // 1. Write Enable
     uint8_t wren = CMD_WRITE_ENABLE;
     NOR_CS_Low();
@@ -55,6 +57,7 @@ HAL_StatusTypeDef SPI_WritePage(
     NOR_CS_High();
     if (status != HAL_OK)
         {
+        LED_off();
         return status;
         }
 
@@ -73,6 +76,7 @@ HAL_StatusTypeDef SPI_WritePage(
     if (status != HAL_OK)
         {
         NOR_CS_High();
+        LED_off();
         return status;
         }
 
@@ -81,6 +85,7 @@ HAL_StatusTypeDef SPI_WritePage(
     NOR_CS_High();
     if (status != HAL_OK)
         {
+        LED_off();
         return status;
         }
 
@@ -96,6 +101,7 @@ HAL_StatusTypeDef SPI_WritePage(
         if (status != HAL_OK)
             {
             NOR_CS_High();
+            LED_off();
             return status;
             }
 
@@ -103,6 +109,7 @@ HAL_StatusTypeDef SPI_WritePage(
         NOR_CS_High();
         if (status != HAL_OK)
             {
+            LED_off();
             return status;
             }
 
@@ -115,6 +122,7 @@ HAL_StatusTypeDef SPI_WritePage(
         HAL_Delay(1); // small delay before next status read
         }
 
+    LED_off();
     return HAL_OK;
     }
 
@@ -146,6 +154,8 @@ HAL_StatusTypeDef SPI_ReadPage(
         return HAL_ERROR;
         }
 
+    LED_on();
+
     // Prepare command sequence for Fast Read:
     // 0x0B + 24-bit address + 1 dummy byte
     cmd[0] = CMD_FAST_READ;
@@ -161,6 +171,7 @@ HAL_StatusTypeDef SPI_ReadPage(
     if (status != HAL_OK)
         {
         NOR_CS_High();
+        LED_off();
         return status;
         }
 
@@ -170,16 +181,18 @@ HAL_StatusTypeDef SPI_ReadPage(
 
     if (status != HAL_OK)
         {
+        LED_off();
         return status;
         }
 
+    LED_off();
     return HAL_OK;
     }
 
 
 
 /**
- * @brief  Erase a sector in the SPI-NOR flash using SPI2.
+ * @brief  Erase a sector (4096 bytes) in the SPI-NOR flash using SPI2.
  * @param  hspi:       SPI handle for SPI2.
  * @param  address:    The 24-bit sector address to be erased.
  * @retval HAL status
@@ -192,6 +205,8 @@ HAL_StatusTypeDef SPI_EraseSector(SPI_HandleTypeDef *hspi, uint32_t address)
     uint8_t cmd[4];
     uint8_t reg;
 
+    LED_on();
+
     // 1. Write Enable
     uint8_t wren = CMD_WRITE_ENABLE;
     NOR_CS_Low();
@@ -199,6 +214,7 @@ HAL_StatusTypeDef SPI_EraseSector(SPI_HandleTypeDef *hspi, uint32_t address)
     NOR_CS_High();
     if (status != HAL_OK)
         {
+        LED_off();
         return status;
         }
 
@@ -216,6 +232,7 @@ HAL_StatusTypeDef SPI_EraseSector(SPI_HandleTypeDef *hspi, uint32_t address)
     NOR_CS_High();
     if (status != HAL_OK)
         {
+        LED_off();
         return status;
         }
 
@@ -230,6 +247,7 @@ HAL_StatusTypeDef SPI_EraseSector(SPI_HandleTypeDef *hspi, uint32_t address)
         if (status != HAL_OK)
             {
             NOR_CS_High();
+            LED_off();
             return status;
             }
 
@@ -237,6 +255,7 @@ HAL_StatusTypeDef SPI_EraseSector(SPI_HandleTypeDef *hspi, uint32_t address)
         NOR_CS_High();
         if (status != HAL_OK)
             {
+            LED_off();
             return status;
             }
 
@@ -251,6 +270,7 @@ HAL_StatusTypeDef SPI_EraseSector(SPI_HandleTypeDef *hspi, uint32_t address)
         HAL_Delay(1); // small delay before next status read
         }
 
+    LED_off();
     return HAL_OK;
     }
 
@@ -268,6 +288,8 @@ HAL_StatusTypeDef SPI_EraseChip(SPI_HandleTypeDef *hspi)
     uint8_t cmd;
     uint8_t reg;
 
+    LED_on();
+
     // 1. Write Enable
     cmd = CMD_WRITE_ENABLE;
     NOR_CS_Low();
@@ -276,6 +298,7 @@ HAL_StatusTypeDef SPI_EraseChip(SPI_HandleTypeDef *hspi)
     if (status != HAL_OK)
         {
         NOR_CS_Low();
+        LED_off();
         return status;
         }
 
@@ -287,40 +310,37 @@ HAL_StatusTypeDef SPI_EraseChip(SPI_HandleTypeDef *hspi)
     NOR_CS_High();
     if (status != HAL_OK)
         {
+        LED_off();
         return status;
         }
-
+    LED_off();
 
     // 3. Poll the WIP bit in the status register until erase completes
     // CMD_READ_STATUS (0x05), read 1 byte of status
-    while(1)
+    do
         {
-        uint8_t cmd_status = CMD_READ_STATUS;
+        HAL_Delay(100); // Chip erase can take significant time, wait a bit before checking again
 
+        LED_on();
         NOR_CS_Low();
-        status = HAL_SPI_Transmit(hspi, &cmd_status, 1, SPI_TIMEOUT);
+        cmd = CMD_READ_STATUS;
+        status = HAL_SPI_Transmit(hspi, &cmd, 1, SPI_TIMEOUT);
         if (status != HAL_OK)
             {
             NOR_CS_High();
+            LED_off();
             return status;
             }
 
         status = HAL_SPI_Receive(hspi, &reg, 1, SPI_TIMEOUT);
         NOR_CS_High();
+        LED_off();
         if (status != HAL_OK)
             {
             return status;
             }
-
-        // Check WIP bit (bit 0)
-        // While (reg & 0x01) == 1, the chip is busy erasing
-        if ((reg & 0x01) == 0x00)
-            {
-            break;
-            }
-
-        HAL_Delay(10); // Chip erase can take significant time, wait a bit before checking again
         }
+    while((reg & 0x01) == 0x01);    // While (reg & 0x01) == 1, the chip is busy erasing
 
     return HAL_OK;
     }
@@ -341,12 +361,15 @@ HAL_StatusTypeDef SPI_ReadStatusReg(
     {
     HAL_StatusTypeDef status;
 
+    LED_on();
+
     // Send the register read command
     NOR_CS_Low();
     status = HAL_SPI_Transmit(hspi, &regCommand, 1, SPI_TIMEOUT);
     if (status != HAL_OK)
         {
         NOR_CS_High();
+        LED_off();
         return status;
         }
 
@@ -356,9 +379,11 @@ HAL_StatusTypeDef SPI_ReadStatusReg(
     if (status != HAL_OK)
         {
         NOR_CS_High();
+        LED_off();
         return status;
         }
 
+    LED_off();
     return HAL_OK;
     }
 

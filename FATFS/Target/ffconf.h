@@ -158,7 +158,7 @@
 
 /* USER CODE BEGIN Volumes */
 #define _STR_VOLUME_ID          1	/* 0:Use only 0-9 for drive ID, 1:Use strings for drive ID */
-#define _VOLUME_STRS            "SD0","SD1","NOR"
+#define _VOLUME_STRS            "NOR"
 /* _STR_VOLUME_ID switches string support of volume ID.
 /  When _STR_VOLUME_ID is set to 1, also pre-defined strings can be used as drive
 /  number in the path name. _VOLUME_STRS defines the drive ID strings for each

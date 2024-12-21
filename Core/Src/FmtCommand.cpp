@@ -13,7 +13,7 @@ extern FATFS FatFs[3];
 extern FIL fil;
 extern uint32_t qbuf[512/4];
 
-void FmtCommand(char *p)
+void MkfsCommand(char *p)
     {
     int blocks = getdec(&p);
     skip(&p);

@@ -51,7 +51,7 @@ void SspiCommand(char *p)
         SPI_WritePage(&hspi2, addr, (uint8_t *)&qbuf, 256);
         }
 
-    else if(p[0] == 'e' && p[1] != 's')
+    else if(p[0] == 'e' && p[1] == 's')
         {
         int count = 1;
 
@@ -63,15 +63,24 @@ void SspiCommand(char *p)
         for(int i=0; i<count; i++)
             {
             SPI_EraseSector(&hspi2, addr);
-            addr += 256;
+            addr += 4096;
             }
         }
 
     else if(p[0] == 'e' && p[1] == 'c')
         {
+        HAL_StatusTypeDef status;
+
         printf("erasing entire SPI-NOR, this may take several minutes\n");
-        SPI_EraseChip(&hspi2);
-        printf("erasing complete\n");
+        status = SPI_EraseChip(&hspi2);
+        if(status != HAL_OK)
+            {
+            printf("erase failed, status = %d\n", status);
+            }
+        else
+            {
+            printf("erasing complete\n");
+            }
         }
 
     else if(p[0] == 'x')

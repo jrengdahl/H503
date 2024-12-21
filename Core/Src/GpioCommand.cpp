@@ -9,6 +9,17 @@
 #include "bogodelay.hpp"
 
 
+void LED_on()
+    {
+    HAL_GPIO_WritePin(GPIONAME( LED), GPIO_PIN_SET);
+    }
+
+void LED_off()
+    {
+    HAL_GPIO_WritePin(GPIONAME( LED), GPIO_PIN_RESET);
+    }
+
+
 void GpioCommand(char *p)
     {
     unsigned count = 1;                 // number of blinks
