@@ -85,12 +85,8 @@ void SspiCommand(char *p)
 
     else if(p[0] == 'x')
         {
-        int res;
-
         extern int xmodem_receive(uint8_t *buf);
-        res = xmodem_receive((uint8_t *)&qbuf);
-        if(res==0)printf("file received OK\n");
-        else printf("xmodem transfer failed %d\n", res);
+        xmodem_receive((uint8_t *)&qbuf);
         }
 
     else
