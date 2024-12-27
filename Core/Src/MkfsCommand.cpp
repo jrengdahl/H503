@@ -13,22 +13,17 @@ extern FATFS FatFs[3];
 extern FIL fil;
 extern uint32_t qbuf[512/4];
 
-void MntCommand(char *p)
+void MkfsCommand(char *p)
     {
-    int drv = *p-'0';
+    int blocks = getdec(&p);
+    skip(&p);
 
-    if(drv<0 || drv > 2)
+    if (f_mkfs(p, FM_FAT|FM_SFD, blocks, (uint8_t *)&qbuf, 512) != FR_OK)
         {
-        printf("invalid drive number\n");
-        return;
-        }
-
-    if(f_mount(&FatFs[drv], p, 1) != FR_OK)
-        {
-        printf("FATFS mount error\n");
+        printf("Filesystem format failed\n");
         }
     else
         {
-        printf("FATFS mount OK\n");
+        printf("Filesystem formatted successfully\n");
         }
     }

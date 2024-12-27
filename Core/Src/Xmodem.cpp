@@ -1,8 +1,8 @@
 #include <stdint.h>
 #include <stdio.h>
-#include <SSPI.h>    // Your QSPI interface functions
 #include "main.h"
-#include "serial.h"  // Your serial communication functions
+#include <SSPI.h>    // SSPI interface functions
+#include "serial.h"  // serial communication functions
 #include "local.h"
 #include "tim.h"
 
@@ -41,15 +41,6 @@ static void phist()
 #define ACK 0x06
 #define NAK 0x15
 #define CAN 0x18
-
-// return codes
-#define R_OK 0
-#define R_PACKET 1
-#define R_IPACKET 2
-#define R_CHECKSUM 3
-#define R_WRITE 4
-#define R_TIMEOUT 5
-
 
 #define PACKET_SIZE 128         // size of an XMODEM packet
 

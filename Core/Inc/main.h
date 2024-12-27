@@ -54,14 +54,6 @@ void Error_Handler(void);
 
 /* USER CODE BEGIN EFP */
 
-extern void trigon();
-extern void trigoff();
-extern void foo();
-
-extern void LED_on();
-extern void LED_off();
-
-
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
@@ -81,6 +73,13 @@ extern void LED_off();
 /* USER CODE BEGIN Private defines */
 
 #define GPIONAME(X) X##_GPIO_Port, X##_Pin
+extern void trigon();
+extern void trigoff();
+
+extern void LED_on();
+extern void LED_off();
+
+
 
 /* USER CODE END Private defines */
 
