@@ -5,6 +5,10 @@
 #include "gpio.h"
 
 
+extern "C" HAL_StatusTypeDef HAL_SPI_Transmit_Inv(SPI_HandleTypeDef *hspi, const uint8_t *pData, uint16_t Size, uint32_t Timeout);
+extern "C" HAL_StatusTypeDef HAL_SPI_Receive_Inv(SPI_HandleTypeDef *hspi, uint8_t *pData, uint16_t Size, uint32_t Timeout);
+
+
 // WinBond W25Q128JVS SPI NOR flash instructions
 #define CMD_WRITE_ENABLE    0x06
 #define CMD_PAGE_PROGRAM    0x02
@@ -35,7 +39,7 @@ static inline void NOR_CS_High(void)
 // write data to the SPI-NOR
 extern "C"
 HAL_StatusTypeDef SPI_WritePage(
-        SPI_HandleTypeDef *hspi,   // handle for the SPI port connected to the flash device
+        SPI_HandleTypeDef *hspi,    // handle for the SPI port connected to the flash device
         uint32_t address,           // address of the block in the SPI flash to begin writing at
         uint8_t *data,              // address in memory of the data to be written
         uint32_t size)              // how many bytes to write
@@ -81,7 +85,7 @@ HAL_StatusTypeDef SPI_WritePage(
         }
 
     // Send the data
-    status = HAL_SPI_Transmit(hspi, data, size, SPI_TIMEOUT);
+    status = HAL_SPI_Transmit_Inv(hspi, data, size, SPI_TIMEOUT);
     NOR_CS_High();
     if (status != HAL_OK)
         {
@@ -176,7 +180,7 @@ HAL_StatusTypeDef SPI_ReadPage(
         }
 
     // Now read the data
-    status = HAL_SPI_Receive(hspi, data, size, SPI_TIMEOUT);
+    status = HAL_SPI_Receive_Inv(hspi, data, size, SPI_TIMEOUT);
     NOR_CS_High();
 
     if (status != HAL_OK)
