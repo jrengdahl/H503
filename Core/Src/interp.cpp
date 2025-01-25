@@ -34,6 +34,15 @@ void interp()
 
     if(f_mount(&FatFs[0], "0:", 1) != FR_OK)
         {
+        printf("FATFS mount error on SD card 0\n");
+        }
+    else
+        {
+        printf("FATFS mount OK on SD card 0\n");
+        }
+
+    if(f_mount(&FatFs[1], "1:", 1) != FR_OK)
+        {
         printf("FATFS mount error on SPI-NOR\n");
         }
     else

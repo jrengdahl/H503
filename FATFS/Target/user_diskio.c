@@ -37,6 +37,7 @@
 #include <ctype.h>        // For character handling functions
 #include "user_diskio.h"
 #include "SSPI.h"
+#include "FATFS_SD.h"
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
@@ -63,11 +64,20 @@ Diskio_drvTypeDef  SPI_Driver =
   SPI_ioctl,
   };
 
+Diskio_drvTypeDef  SD_disk_Driver =
+  {
+  SD_disk_initialize,
+  SD_disk_status,
+  SD_disk_read,
+  SD_disk_write,
+  SD_disk_ioctl,
+  };
+
 Disk_drvTypeDef disk =
   {
-  {0},
-  {&SPI_Driver},
-  1
+  {0, 0},
+  {&SD_disk_Driver, &SPI_Driver},
+  3
   };
 
 /* USER CODE END DECL */
