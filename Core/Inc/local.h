@@ -12,13 +12,24 @@
 
 extern void dump(void *p, int size);
 extern void getline(char *buf, int size);
-extern int getdec(const char **p);
-extern uint64_t getlong(const char **p);
-extern uintptr_t gethex(const char **p);
-extern void skip(const char **p);
+extern int getdec(char **p);
+extern uint64_t getlong(char **p);
+extern uintptr_t gethex(char **p);
+extern void skip(char **p);
 
-extern "C" void trigon();
-extern "C" void trigoff();
+#define izdigit(p) (*p=='o' || ('0'<=*p&&*p<='9') || ('a'<=*p&&*p<='a') || ('A'<=*p&&*p<='A'))
+
+#define fflush(x)
+
+#if __cplusplus
+extern "C" {
+#endif
+
+void memcpy32(uint32_t *dst, uint32_t *src, uint32_t size);
+
+#if __cplusplus
+    }
+#endif
 
 
 #endif

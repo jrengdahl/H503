@@ -54,15 +54,21 @@ void Error_Handler(void);
 
 /* USER CODE BEGIN EFP */
 
-extern void trigon();
-extern void trigoff();
-extern void foo();
-
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
+#define SPI1_NSS_Pin GPIO_PIN_1
+#define SPI1_NSS_GPIO_Port GPIOC
+#define TRIGGER2_Pin GPIO_PIN_2
+#define TRIGGER2_GPIO_Port GPIOA
+#define SPI2_NSS_Pin GPIO_PIN_12
+#define SPI2_NSS_GPIO_Port GPIOB
 #define PA8_Pin GPIO_PIN_8
 #define PA8_GPIO_Port GPIOA
+#define TRIGGER0_Pin GPIO_PIN_9
+#define TRIGGER0_GPIO_Port GPIOA
+#define TRIGGER1_Pin GPIO_PIN_10
+#define TRIGGER1_GPIO_Port GPIOA
 #define SWDIO_Pin GPIO_PIN_13
 #define SWDIO_GPIO_Port GPIOA
 #define SWCLK_Pin GPIO_PIN_14
@@ -75,6 +81,14 @@ extern void foo();
 /* USER CODE BEGIN Private defines */
 
 #define GPIONAME(X) X##_GPIO_Port, X##_Pin
+extern void trigon(int x);
+extern void trigoff(int x);
+extern void trigpulse(int x);
+
+extern void LED_on();
+extern void LED_off();
+
+
 
 /* USER CODE END Private defines */
 

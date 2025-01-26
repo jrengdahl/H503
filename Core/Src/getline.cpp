@@ -12,7 +12,7 @@ extern "C" int __io_getchar();
 
 
 // get a decimal number from the command line buffer
-int getdec(const char **p)
+int getdec(char **p)
     {
     int x=0;
 
@@ -31,7 +31,7 @@ int getdec(const char **p)
     }
 
 // get a long decimal number from the command lne buffer
-uint64_t getlong(const char **p)
+uint64_t getlong(char **p)
     {
     uint64_t x=0;
 
@@ -50,23 +50,37 @@ uint64_t getlong(const char **p)
     }
 
 // get a hex number from the command line buffer
-uintptr_t gethex(const char **p)
+uintptr_t gethex(char **p)
     {
     uintptr_t x=0;
 
-    while(1)
+    if(**p != 'o')
         {
-        if('0'<=**p&&**p<='9')     x = (x<<4) + **p-'0';
-        else if('a'<=**p&&**p<='f')x = (x<<4) + **p-'a'+10;
-        else if('A'<=**p&&**p<='F')x = (x<<4) + **p-'A'+10;
-        else if( **p == '\''){}
-        else return x;
+        while(1)
+            {
+            if('0'<=**p&&**p<='9')     x = (x<<4) + **p-'0';
+            else if('a'<=**p&&**p<='f')x = (x<<4) + **p-'a'+10;
+            else if('A'<=**p&&**p<='F')x = (x<<4) + **p-'A'+10;
+            else if( **p == '\''){}
+            else return x;
+            (*p)++;
+            }
+        }
+    else
+        {
         (*p)++;
+        while(1)
+            {
+            if('0'<=**p&&**p<='7')     x = (x<<3) + **p-'0';
+            else if( **p == '\''){}
+            else return x;
+            (*p)++;
+            }
         }
     }
 
 // skip a pointer to the start of the next argument in the command line buffer
-void skip(const char **p)
+void skip(char **p)
     {
     while(**p && **p!=' ')(*p)++;                                               // skip the arg that p points to
     while(**p && **p==' ')(*p)++;                                               // skip any following whitespace
@@ -111,6 +125,7 @@ int get1()
 static int first=1;
 static char lastline[NHISTORY][INBUFLEN];
 static int lln=0;
+int getline_nchar = 0;
 
 
 // fill a command line buffer from stdin, handling command line editing and history
@@ -120,7 +135,7 @@ void getline(   char *buf,                                                      
     {
     int i;                                                                      // general purpose loop counter
     int c;                                                                      // current input character
-    int x=0;                                                                    // cursor postion
+    int x=0;                                                                    // cursor position
     int n=0;                                                                    // length of line
     int tll=0;
     
@@ -278,6 +293,7 @@ void getline(   char *buf,                                                      
             if(x<n)back(n-x);
             }
         fflush(stdout);
+        getline_nchar = n;
         }
     if(x<n)forward(n-x);
     putchar('\n');
@@ -285,5 +301,6 @@ void getline(   char *buf,                                                      
     for(i=0;i<n;i++)lastline[lln][i] = buf[i];
     lastline[lln][n]=0;
     lln = (lln+1)&HMASK;
+    getline_nchar = 0;
     }   
 

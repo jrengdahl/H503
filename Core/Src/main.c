@@ -21,6 +21,7 @@
 #include "adc.h"
 #include "icache.h"
 #include "memorymap.h"
+#include "spi.h"
 #include "tim.h"
 #include "usb.h"
 #include "gpio.h"
@@ -63,16 +64,6 @@ void SystemClock_Config(void);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 
-void trigon()
-    {
-    HAL_GPIO_WritePin(GPIONAME(LED), 1);
-    }
-
-void trigoff()
-    {
-    HAL_GPIO_WritePin(GPIONAME(LED), 0);
-    }
-
 /* USER CODE END 0 */
 
 /**
@@ -81,6 +72,7 @@ void trigoff()
   */
 int main(void)
 {
+
   /* USER CODE BEGIN 1 */
 
   /* USER CODE END 1 */
@@ -107,6 +99,8 @@ int main(void)
   MX_ICACHE_Init();
   MX_ADC1_Init();
   MX_TIM2_Init();
+  MX_SPI2_Init();
+  MX_SPI1_Init();
   /* USER CODE BEGIN 2 */
 
   MX_USB_Device_Init();
@@ -119,7 +113,7 @@ int main(void)
     Error_Handler();
     }
 
-  /* start the TIM2, whihc is used for the 1 usec clock */
+  /* start TIM2, whihc is used for the 1 usec clock */
   HAL_TIM_Base_Start(&htim2);
 
   extern void background();
@@ -156,11 +150,13 @@ void SystemClock_Config(void)
   /** Initializes the RCC Oscillators according to the specified parameters
   * in the RCC_OscInitTypeDef structure.
   */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI|RCC_OSCILLATORTYPE_HSE;
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI48|RCC_OSCILLATORTYPE_HSI
+                              |RCC_OSCILLATORTYPE_HSE;
   RCC_OscInitStruct.HSEState = RCC_HSE_BYPASS;
   RCC_OscInitStruct.HSIState = RCC_HSI_ON;
   RCC_OscInitStruct.HSIDiv = RCC_HSI_DIV2;
   RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
+  RCC_OscInitStruct.HSI48State = RCC_HSI48_ON;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
   RCC_OscInitStruct.PLL.PLLSource = RCC_PLL1_SOURCE_HSE;
   RCC_OscInitStruct.PLL.PLLM = 4;
@@ -191,6 +187,11 @@ void SystemClock_Config(void)
   {
     Error_Handler();
   }
+  HAL_RCC_MCOConfig(RCC_MCO2, RCC_MCO2SOURCE_SYSCLK, RCC_MCODIV_10);
+
+  /** Configure the programming delay
+  */
+  __HAL_FLASH_SET_PROGRAM_DELAY(FLASH_PROGRAMMING_DELAY_1);
 }
 
 /* USER CODE BEGIN 4 */

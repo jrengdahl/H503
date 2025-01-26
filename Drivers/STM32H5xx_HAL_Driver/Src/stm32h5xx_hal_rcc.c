@@ -1697,11 +1697,11 @@ void HAL_RCC_NMI_IRQHandler(void)
   /* Check RCC CSSF interrupt flag  */
   if (__HAL_RCC_GET_IT(RCC_IT_HSECSS))
   {
-    /* RCC Clock Security System interrupt user callback */
-    HAL_RCC_CSSCallback();
-
     /* Clear RCC CSS pending bit */
     __HAL_RCC_CLEAR_IT(RCC_IT_HSECSS);
+
+    /* RCC Clock Security System interrupt user callback */
+    HAL_RCC_CSSCallback();
   }
 }
 
@@ -1742,6 +1742,13 @@ __weak void HAL_RCC_CSSCallback(void)
   *         Default state is non-secure and unprivileged access allowed.
   * @note   Secure and non-secure attributes can only be set from the secure
   *         state when the system implements the security (TZEN=1).
+  * @note   As the privileged attributes concern either all secure or all non-secure
+  *         RCC resources accesses and not each RCC individual items access attribute,
+  *         the application must ensure that the privilege access attribute configurations
+  *         are coherent amongst the security level set on RCC individual items
+  *         so not to overwrite a previous more restricted access rule (consider either
+  *         all secure and/or all non-secure RCC resources accesses by privileged-only
+  *         transactions or privileged and unprivileged transactions).
   * @param  Item Item(s) to set attributes on.
   *         This parameter can be a one or a combination of @ref RCC_items (**).
   * @param  Attributes specifies the RCC secure/privilege attributes.
