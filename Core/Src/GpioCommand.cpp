@@ -19,6 +19,35 @@ void LED_off()
     HAL_GPIO_WritePin(GPIONAME( LED), GPIO_PIN_RESET);
     }
 
+extern "C"
+void trigon(int x)
+    {
+    switch(x)
+        {
+        case 0: HAL_GPIO_WritePin(GPIONAME(TRIGGER0), GPIO_PIN_SET); return;
+        case 1: HAL_GPIO_WritePin(GPIONAME(TRIGGER1), GPIO_PIN_SET); return;
+        case 2: HAL_GPIO_WritePin(GPIONAME(TRIGGER2), GPIO_PIN_SET); return;
+        }
+    }
+
+extern "C"
+void trigoff(int x)
+    {
+    switch(x)
+        {
+        case 0: HAL_GPIO_WritePin(GPIONAME(TRIGGER0), GPIO_PIN_RESET); return;
+        case 1: HAL_GPIO_WritePin(GPIONAME(TRIGGER1), GPIO_PIN_RESET); return;
+        case 2: HAL_GPIO_WritePin(GPIONAME(TRIGGER2), GPIO_PIN_RESET); return;
+        }
+    }
+
+extern "C"
+void trigpulse(int x)
+    {
+    trigon(x);
+    trigoff(x);
+    }
+
 
 void GpioCommand(char *p)
     {
@@ -45,9 +74,10 @@ void GpioCommand(char *p)
         {
         switch(dest)
             {
-            case  0: HAL_GPIO_WritePin(GPIONAME( LED), (GPIO_PinState)(i&1)); break;
-            case  1: HAL_GPIO_WritePin(GPIONAME( PA8), (GPIO_PinState)(i&1)); break;
-            default: HAL_GPIO_WritePin(GPIONAME( LED), (GPIO_PinState)(i&1)); break;
+            case  0: HAL_GPIO_WritePin(GPIONAME( LED),      (GPIO_PinState)(i&1)); break;
+            case  1: HAL_GPIO_WritePin(GPIONAME( TRIGGER0), (GPIO_PinState)(i&1)); break;
+            case  2: HAL_GPIO_WritePin(GPIONAME( PA8),      (GPIO_PinState)(i&1)); break;
+            default: HAL_GPIO_WritePin(GPIONAME( LED),      (GPIO_PinState)(i&1)); break;
             }
 
         bogodelay(delay);

@@ -13,7 +13,6 @@
 //-----[ SD Card SPI Interface Cfgs ]-----
 
 extern SPI_HandleTypeDef    hspi1;
-
 #define HSPI_SDCARD(drv) 	&hspi1
 #define SD_CS_PORT(drv) 	SPI1_NSS_GPIO_Port
 #define SD_CS_PIN(drv) 		SPI1_NSS_Pin

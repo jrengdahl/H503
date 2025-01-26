@@ -77,7 +77,7 @@ Disk_drvTypeDef disk =
   {
   {0, 0},
   {&SD_disk_Driver, &SPI_Driver},
-  3
+  2
   };
 
 /* USER CODE END DECL */

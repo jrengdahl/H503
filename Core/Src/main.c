@@ -64,16 +64,6 @@ void SystemClock_Config(void);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 
-void trigon()
-    {
-    HAL_GPIO_WritePin(GPIONAME(LED), 1);
-    }
-
-void trigoff()
-    {
-    HAL_GPIO_WritePin(GPIONAME(LED), 0);
-    }
-
 /* USER CODE END 0 */
 
 /**

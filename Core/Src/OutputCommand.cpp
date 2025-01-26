@@ -24,8 +24,9 @@ void OutputCommand(char *p)
 
     switch(o)
         {
-        case 0:     HAL_GPIO_WritePin(GPIONAME(LED), (GPIO_PinState)(value));  break;
-        case 1:     HAL_GPIO_WritePin(GPIONAME(PA8), (GPIO_PinState)(value));  break;
-        default:    HAL_GPIO_WritePin(GPIONAME(LED), (GPIO_PinState)(value));  break;
+        case 0:     HAL_GPIO_WritePin(GPIONAME(LED),      (GPIO_PinState)(value));  break;
+        case 1:     HAL_GPIO_WritePin(GPIONAME(TRIGGER0), (GPIO_PinState)(value));  break;
+        case 2:     HAL_GPIO_WritePin(GPIONAME(PA8),      (GPIO_PinState)(value));  break;
+        default:    HAL_GPIO_WritePin(GPIONAME(LED),      (GPIO_PinState)(value));  break;
         }
     }
